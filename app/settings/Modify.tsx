@@ -110,7 +110,11 @@ const Modify = () => {
          return;
       }
 
-      // No limit on number of values - users can add as many as they want
+      // Limit to maximum 5 choices
+      if (values.length >= 5) {
+         showToast("Maximum 5 choices allowed", "error");
+         return;
+      }
 
       setValues(
          [...values, trimmedValue].sort(
