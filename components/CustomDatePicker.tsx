@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-const CustomDatePicker = ({
+interface CustomDatePickerProps {
+   visible: boolean;
+   onClose: () => void;
+   initialYear: number;
+   initialMonth: number;
+   onDateSelect: (year: number, month: number) => void;
+}
+
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
    visible,
    onClose,
    initialYear,
    initialMonth,
    onDateSelect,
 }) => {
-   const [selectedYear, setSelectedYear] = useState(initialYear);
-   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+   const [selectedYear, setSelectedYear] = useState<number>(initialYear);
+   const [selectedMonth, setSelectedMonth] = useState<number>(initialMonth);
 
-   const yearScrollRef = useRef(null);
-   const monthScrollRef = useRef(null);
+   const yearScrollRef = useRef<ScrollView>(null);
+   const monthScrollRef = useRef<ScrollView>(null);
 
    // Update selected values when modal opens with new initial values
    useEffect(() => {
@@ -21,6 +29,15 @@ const CustomDatePicker = ({
          setSelectedMonth(initialMonth);
       }
    }, [visible, initialYear, initialMonth]);
+
+   const currentYear = new Date().getFullYear();
+   const currentMonth = new Date().getMonth();
+
+   // Generate years from 1990 to currentYear + 10
+   const years = Array.from(
+      { length: currentYear + 10 - 1990 + 1 },
+      (_, i) => 1990 + i
+   );
 
    // Auto-scroll to selected date when modal opens
    useEffect(() => {
@@ -55,15 +72,6 @@ const CustomDatePicker = ({
       }
    }, [visible, selectedYear, selectedMonth, years]);
 
-   const currentYear = new Date().getFullYear();
-   const currentMonth = new Date().getMonth();
-
-   // Generate years from 1990 to currentYear + 10
-   const years = Array.from(
-      { length: currentYear + 10 - 1990 + 1 },
-      (_, i) => 1990 + i
-   );
-
    const monthNames = [
       "January",
       "February",
@@ -92,11 +100,11 @@ const CustomDatePicker = ({
    };
 
    const renderScrollableList = (
-      items,
-      selectedValue,
-      onSelect,
-      isYear = false,
-      scrollRef = null
+      items: (string | number)[],
+      selectedValue: number,
+      onSelect: (value: number) => void,
+      isYear: boolean = false,
+      scrollRef?: React.RefObject<ScrollView>
    ) => {
       const itemHeight = 50;
       const containerHeight = 200;
@@ -117,7 +125,7 @@ const CustomDatePicker = ({
                style={{ flex: 1 }}
             >
                {items.map((item, index) => {
-                  const value = isYear ? item : index;
+                  const value = isYear ? item as number : index;
                   const isSelected = selectedValue === value;
 
                   return (
@@ -186,7 +194,7 @@ const CustomDatePicker = ({
                         selectedYear,
                         setSelectedYear,
                         true,
-                        yearScrollRef
+                        yearScrollRef as React.RefObject<ScrollView>
                      )}
                   </View>
 
@@ -200,7 +208,7 @@ const CustomDatePicker = ({
                         selectedMonth,
                         setSelectedMonth,
                         false,
-                        monthScrollRef
+                        monthScrollRef as React.RefObject<ScrollView>
                      )}
                   </View>
                </View>

@@ -2,10 +2,26 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect } from "react";
 import { Animated, Text, View } from "react-native";
 
-const Toast = ({
+type ToastType = 'success' | 'error' | 'info';
+
+interface ToastProps {
+   visible: boolean;
+   message: string;
+   type?: ToastType;
+   duration?: number;
+   onHide?: () => void;
+}
+
+interface ToastConfig {
+   bgClass: string;
+   icon: keyof typeof Ionicons.glyphMap;
+   iconColor: string;
+}
+
+const Toast: React.FC<ToastProps> = ({
    visible,
    message,
-   type = "success", // 'success', 'error', 'info'
+   type = "success",
    duration = 3000,
    onHide,
 }) => {
@@ -39,7 +55,7 @@ const Toast = ({
       }
    }, [visible, duration, fadeAnim, hideToast]);
 
-   const getToastConfig = () => {
+   const getToastConfig = (): ToastConfig => {
       switch (type) {
          case "success":
             return {

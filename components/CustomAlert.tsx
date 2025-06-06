@@ -2,7 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
 
-const CustomAlert = ({
+interface CustomAlertProps {
+   visible: boolean;
+   title: string;
+   message: string;
+   onCancel: () => void;
+   onConfirm?: () => void;
+   type?: 'delete' | 'info';
+}
+
+const CustomAlert: React.FC<CustomAlertProps> = ({
    visible,
    title,
    message,

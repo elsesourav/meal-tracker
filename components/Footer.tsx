@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import CustomDatePicker from "./CustomDatePicker";
 
-const Navigation = ({ className = "" }) => {
-   const router = useRouter();
-   const [currentDate, setCurrentDate] = useState(new Date());
-   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+interface FooterProps {
+   className?: string;
+}
+
+const Footer: React.FC<FooterProps> = ({ className = "" }) => {
+   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+   const [isDatePickerVisible, setIsDatePickerVisible] = useState<boolean>(false);
 
    const monthNames = [
       "January",
@@ -40,12 +42,8 @@ const Navigation = ({ className = "" }) => {
       setIsDatePickerVisible(true);
    };
 
-   const handleDateSelect = (year, month) => {
+   const handleDateSelect = (year: number, month: number) => {
       setCurrentDate(new Date(year, month, 1));
-   };
-
-   const navigateToSettings = () => {
-      router.push("/settings");
    };
 
    return (
@@ -85,10 +83,7 @@ const Navigation = ({ className = "" }) => {
 
             {/* Settings Icon */}
             <View className="flex justify-center items-center w-20">
-               <TouchableOpacity
-                  className="p-3 rounded-xl bg-white shadow-sm"
-                  onPress={navigateToSettings}
-               >
+               <TouchableOpacity className="p-3 rounded-xl bg-white shadow-sm">
                   <Ionicons name="settings-outline" size={24} color="#3B82F6" />
                </TouchableOpacity>
             </View>
@@ -105,4 +100,5 @@ const Navigation = ({ className = "" }) => {
       </View>
    );
 };
-export default Navigation;
+
+export default Footer;

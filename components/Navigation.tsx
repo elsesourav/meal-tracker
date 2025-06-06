@@ -1,11 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import CustomDatePicker from "./CustomDatePicker";
 
-const Footer = ({ className = "" }) => {
-   const [currentDate, setCurrentDate] = useState(new Date());
-   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+interface NavigationProps {
+   className?: string;
+   onDateChange?: (date: Date) => void;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ className = "", onDateChange }) => {
+   const router = useRouter();
+   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+   const [isDatePickerVisible, setIsDatePickerVisible] = useState<boolean>(false);
 
    const monthNames = [
       "January",
@@ -23,23 +30,37 @@ const Footer = ({ className = "" }) => {
    ];
 
    const goToPreviousMonth = () => {
-      setCurrentDate(
-         new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+      const newDate = new Date(
+         currentDate.getFullYear(),
+         currentDate.getMonth() - 1,
+         1
       );
+      setCurrentDate(newDate);
+      onDateChange?.(newDate);
    };
 
    const goToNextMonth = () => {
-      setCurrentDate(
-         new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+      const newDate = new Date(
+         currentDate.getFullYear(),
+         currentDate.getMonth() + 1,
+         1
       );
+      setCurrentDate(newDate);
+      onDateChange?.(newDate);
    };
 
    const openCustomDatePicker = () => {
       setIsDatePickerVisible(true);
    };
 
-   const handleDateSelect = (year, month) => {
-      setCurrentDate(new Date(year, month, 1));
+   const handleDateSelect = (year: number, month: number) => {
+      const newDate = new Date(year, month, 1);
+      setCurrentDate(newDate);
+      onDateChange?.(newDate);
+   };
+
+   const navigateToSettings = () => {
+      router.push("/settings" as any);
    };
 
    return (
@@ -79,7 +100,10 @@ const Footer = ({ className = "" }) => {
 
             {/* Settings Icon */}
             <View className="flex justify-center items-center w-20">
-               <TouchableOpacity className="p-3 rounded-xl bg-white shadow-sm">
+               <TouchableOpacity
+                  className="p-3 rounded-xl bg-white shadow-sm"
+                  onPress={navigateToSettings}
+               >
                   <Ionicons name="settings-outline" size={24} color="#3B82F6" />
                </TouchableOpacity>
             </View>
@@ -96,4 +120,5 @@ const Footer = ({ className = "" }) => {
       </View>
    );
 };
-export default Footer;
+
+export default Navigation;
