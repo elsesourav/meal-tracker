@@ -9,7 +9,8 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = ({ className = "" }) => {
    const [currentDate, setCurrentDate] = useState<Date>(new Date());
-   const [isDatePickerVisible, setIsDatePickerVisible] = useState<boolean>(false);
+   const [isDatePickerVisible, setIsDatePickerVisible] =
+      useState<boolean>(false);
 
    const monthNames = [
       "January",

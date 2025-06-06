@@ -125,7 +125,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
                style={{ flex: 1 }}
             >
                {items.map((item, index) => {
-                  const value = isYear ? item as number : index;
+                  const value = isYear ? (item as number) : index;
                   const isSelected = selectedValue === value;
 
                   return (

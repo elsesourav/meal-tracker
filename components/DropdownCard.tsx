@@ -68,7 +68,7 @@ const DropdownCard: React.FC<DropdownCardProps> = ({
                   minHeight: 120, // Fixed height for 4 options
                }}
             >
-               <ScrollView 
+               <ScrollView
                   className="max-h-32"
                   nestedScrollEnabled={true}
                   showsVerticalScrollIndicator={false}
@@ -81,7 +81,9 @@ const DropdownCard: React.FC<DropdownCardProps> = ({
                            toggleDropdown(typeKey);
                         }}
                         className={`px-3 py-2 ${
-                           index < customChoices.length - 1 ? "border-b border-gray-100" : ""
+                           index < customChoices.length - 1
+                              ? "border-b border-gray-100"
+                              : ""
                         } ${
                            typeSelected.value === choice
                               ? "bg-blue-500"

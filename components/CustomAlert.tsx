@@ -8,7 +8,7 @@ interface CustomAlertProps {
    message: string;
    onCancel: () => void;
    onConfirm?: () => void;
-   type?: 'delete' | 'info';
+   type?: "delete" | "info";
 }
 
 const CustomAlert: React.FC<CustomAlertProps> = ({

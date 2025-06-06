@@ -9,10 +9,14 @@ interface NavigationProps {
    onDateChange?: (date: Date) => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ className = "", onDateChange }) => {
+const Navigation: React.FC<NavigationProps> = ({
+   className = "",
+   onDateChange,
+}) => {
    const router = useRouter();
    const [currentDate, setCurrentDate] = useState<Date>(new Date());
-   const [isDatePickerVisible, setIsDatePickerVisible] = useState<boolean>(false);
+   const [isDatePickerVisible, setIsDatePickerVisible] =
+      useState<boolean>(false);
 
    const monthNames = [
       "January",

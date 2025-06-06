@@ -1,8 +1,8 @@
-import Navigation from "../components/Navigation";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import DropdownCard from "../components/DropdownCard";
+import Navigation from "../components/Navigation";
 
 const TView = ({
    className = "",
