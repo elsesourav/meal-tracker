@@ -14,15 +14,13 @@ const TabItem = ({
    color: string;
    focused: boolean;
 }) => (
-   <View
-      className="text-center w-30 items-center justify-center"
-   >
+   <View className="text-center w-30 items-center justify-center">
       <Ionicons name={icon as any} size={focused ? 26 : 24} color={color} />
       {focused && (
          <Text
             className="text-xs w-32 font-semibold mt-1 text-center"
             style={{
-               color: color
+               color: color,
             }}
          >
             {label}
@@ -63,12 +61,12 @@ const _layout = () => {
             }}
          />
          <Tabs.Screen
-            name="Profile"
+            name="Status"
             options={{
                tabBarIcon: ({ color, focused }) => (
                   <TabItem
-                     icon="person-outline"
-                     label="Profile"
+                     icon="analytics-outline"
+                     label="Status"
                      color={color}
                      focused={focused}
                   />

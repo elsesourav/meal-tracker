@@ -1,31 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useMealTracker } from "../../hooks/useMealTracker";
 import { MealDataService } from "../../services/MealDataService";
 
 const Settings = () => {
-   const { exportData, importData } = useMealTracker();
-   const [statistics, setStatistics] = useState({
-      totalDays: 0,
-      totalAmount: 0,
-      dayTotal: 0,
-      nightTotal: 0,
-      extraTotal: 0,
-   });
-
-   useEffect(() => {
-      loadStatistics();
-   }, []);
-
-   const loadStatistics = async () => {
-      try {
-         const stats = await MealDataService.getDataStatistics();
-         setStatistics(stats);
-      } catch (error) {
-         console.error("Error loading statistics:", error);
-      }
-   };
+   const { exportData, importData, clearAllData, reloadAllData } =
+      useMealTracker();
 
    const handleExportData = async () => {
       try {
@@ -38,6 +19,7 @@ const Settings = () => {
             );
          }
       } catch (error) {
+         console.error("Export error:", error);
          Alert.alert(
             "Export Failed",
             "There was an error exporting your data. Please try again.",
@@ -59,14 +41,20 @@ const Settings = () => {
                   try {
                      const success = await importData();
                      if (success) {
+                        // Trigger a reload to refresh the month data choices on the main page
+                        if (reloadAllData) {
+                           await reloadAllData();
+                           console.log("✅ Data reloaded after import");
+                        }
+
                         Alert.alert(
                            "Import Successful",
                            "Your data has been imported successfully.",
                            [{ text: "OK" }]
                         );
-                        loadStatistics(); // Refresh statistics
                      }
                   } catch (error) {
+                     console.error("Import error:", error);
                      Alert.alert(
                         "Import Failed",
                         "There was an error importing your data. Please try again.",
@@ -90,14 +78,35 @@ const Settings = () => {
                style: "destructive",
                onPress: async () => {
                   try {
-                     await MealDataService.clearAllData();
-                     Alert.alert(
-                        "Data Cleared",
-                        "All your data has been deleted successfully.",
-                        [{ text: "OK" }]
+                     console.log(
+                        "🚀 Starting complete data clear from Settings..."
                      );
-                     loadStatistics(); // Refresh statistics
+                     if (clearAllData) {
+                        await clearAllData(); // Use the hook function instead of service directly
+                        console.log("✅ Complete data clear successful");
+
+                        // Trigger a reload to refresh the month data choices on the main page
+                        if (reloadAllData) {
+                           await reloadAllData();
+                           console.log("✅ Data reloaded after clear");
+                        }
+
+                        Alert.alert(
+                           "Data Cleared",
+                           "All your data has been deleted successfully.",
+                           [{ text: "OK" }]
+                        );
+                     } else {
+                        // Fallback to service method
+                        await MealDataService.clearAllData();
+                        Alert.alert(
+                           "Data Cleared",
+                           "All your data has been deleted successfully (fallback method).",
+                           [{ text: "OK" }]
+                        );
+                     }
                   } catch (error) {
+                     console.error("Clear data error:", error);
                      Alert.alert(
                         "Error",
                         "There was an error clearing your data. Please try again.",
@@ -148,25 +157,6 @@ const Settings = () => {
       </TouchableOpacity>
    );
 
-   const StatCard = ({
-      label,
-      value,
-      color = "#3B82F6",
-   }: {
-      label: string;
-      value: number;
-      color?: string;
-   }) => (
-      <View className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-         <Text className="text-sm text-gray-500 mb-1">{label}</Text>
-         <Text className={`text-2xl font-bold`} style={{ color }}>
-            {label.includes("Total") && label !== "Total Days"
-               ? `₹${value}`
-               : value}
-         </Text>
-      </View>
-   );
-
    return (
       <ScrollView className="flex-1 bg-gray-50 px-4 pt-4">
          {/* Header */}
@@ -177,42 +167,6 @@ const Settings = () => {
             <Text className="text-gray-600">
                Manage your meal tracker preferences and data
             </Text>
-         </View>
-
-         {/* Statistics Section */}
-         <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">
-               Data Overview
-            </Text>
-            <View className="grid grid-cols-2 gap-3 mb-3">
-               <StatCard
-                  label="Total Days"
-                  value={statistics.totalDays}
-                  color="#10B981"
-               />
-               <StatCard
-                  label="Total Amount"
-                  value={statistics.totalAmount}
-                  color="#F59E0B"
-               />
-            </View>
-            <View className="grid grid-cols-3 gap-3">
-               <StatCard
-                  label="Day Total"
-                  value={statistics.dayTotal}
-                  color="#3B82F6"
-               />
-               <StatCard
-                  label="Night Total"
-                  value={statistics.nightTotal}
-                  color="#8B5CF6"
-               />
-               <StatCard
-                  label="Extra Total"
-                  value={statistics.extraTotal}
-                  color="#EF4444"
-               />
-            </View>
          </View>
 
          {/* Data Management Section */}
@@ -246,26 +200,26 @@ const Settings = () => {
             />
          </View>
 
-         {/* Auto-Save Info */}
-         <View className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
-            <View className="flex-row items-center mb-2">
-               <Ionicons name="information-circle" size={20} color="#3B82F6" />
-               <Text className="text-blue-800 font-semibold ml-2">
-                  Auto-Save Enabled
-               </Text>
-            </View>
-            <Text className="text-blue-700 text-sm">
-               Your meal data is automatically saved in JSON format whenever you
-               make changes. Each date stores: {"\n"}
-               {`{ day: value, night: value, extra: value }`}
-            </Text>
-         </View>
-
          {/* App Info */}
          <View className="mb-8">
             <Text className="text-lg font-semibold text-gray-800 mb-3">
                App Information
             </Text>
+
+            <View className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-6">
+               <View className="flex-row items-center mb-2">
+                  <Ionicons name="analytics" size={20} color="#3B82F6" />
+                  <Text className="text-blue-800 font-semibold ml-2">
+                     Data Format
+                  </Text>
+               </View>
+               <Text className="text-blue-700 text-sm">
+                  Each date entry stores: {"\n"}
+                  {`{ day: amount, night: amount, extra: amount }`}
+                  {"\n"}
+                  Example: {`{ day: 100, night: 50, extra: 25 }`}
+               </Text>
+            </View>
 
             <SettingsCard
                title="Version"
@@ -274,6 +228,18 @@ const Settings = () => {
                onPress={() => {}}
                showArrow={false}
             />
+         </View>
+
+         {/* Copyright Section */}
+         <View className="mb-8 mt-4">
+            <View className="bg-gray-100 rounded-lg p-4 border border-gray-200">
+               <Text className="text-center text-sm text-gray-600 mb-1">
+                  © 2025 Meal Tracker App
+               </Text>
+               <Text className="text-center text-xs text-gray-500">
+                  Built with React Native & Expo
+               </Text>
+            </View>
          </View>
       </ScrollView>
    );

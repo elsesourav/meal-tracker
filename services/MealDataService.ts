@@ -219,12 +219,69 @@ export class MealDataService {
       }
    }
 
-   // Clear all data
+   // Clear all data (but preserve custom choices)
    static async clearAllData(): Promise<void> {
       try {
+         console.log("🔍 Starting clearAllData process...");
+
+         // Check what data exists before clearing
+         const mealDataBefore = await AsyncStorage.getItem(STORAGE_KEY);
+         const customDataBefore = await AsyncStorage.getItem(
+            CUSTOM_CHOICES_KEY
+         );
+
+         console.log("📊 Data before clearing:");
+         console.log("- Meal data exists:", mealDataBefore ? "YES" : "NO");
+         console.log(
+            "- Custom choices exist:",
+            customDataBefore ? "YES (preserved)" : "NO"
+         );
+
+         if (mealDataBefore) {
+            const parsed = JSON.parse(mealDataBefore);
+            console.log("- Meal data entries:", Object.keys(parsed).length);
+         }
+
+         // Perform the clear operations - ONLY clear meal data, preserve custom choices
+         console.log("🗑️ Removing meal data (preserving custom choices)...");
          await AsyncStorage.removeItem(STORAGE_KEY);
+         // DO NOT remove CUSTOM_CHOICES_KEY - these are user's custom dropdown options
+
+         // Verify data is actually cleared
+         console.log("🔍 Verifying data removal...");
+         const mealDataAfter = await AsyncStorage.getItem(STORAGE_KEY);
+         const customDataAfter = await AsyncStorage.getItem(CUSTOM_CHOICES_KEY);
+
+         console.log("📊 Data after clearing:");
+         console.log(
+            "- Meal data:",
+            mealDataAfter ? "STILL EXISTS!" : "Cleared ✅"
+         );
+         console.log(
+            "- Custom choices:",
+            customDataAfter ? "Preserved ✅" : "Not found (OK)"
+         );
+
+         // Additional verification - list all keys
+         const allKeys = await AsyncStorage.getAllKeys();
+         const mealKeys = allKeys.filter((key) => key === STORAGE_KEY);
+         console.log(
+            "🔑 Remaining meal data keys:",
+            mealKeys.length > 0 ? mealKeys : "None ✅"
+         );
+
+         if (mealDataAfter) {
+            throw new Error(
+               "Meal data was not successfully cleared from AsyncStorage"
+            );
+         }
+
+         console.log(
+            "✅ Meal data cleared successfully (custom choices preserved)"
+         );
+         return; // Return success - let the calling code handle UI state clearing
       } catch (error) {
-         console.error("Error clearing data:", error);
+         console.error("❌ Error clearing data:", error);
          throw error;
       }
    }
@@ -270,6 +327,88 @@ export class MealDataService {
             dayTotal: 0,
             nightTotal: 0,
             extraTotal: 0,
+         };
+      }
+   }
+
+   // Get current month statistics
+   static async getCurrentMonthStatistics(): Promise<{
+      totalDays: number;
+      totalAmount: number;
+      dayTotal: number;
+      nightTotal: number;
+      extraTotal: number;
+      monthName: string;
+      year: number;
+   }> {
+      try {
+         const allData = await this.loadAllMealData();
+         const now = new Date();
+         const currentMonth = now.getMonth() + 1; // 1-based month
+         const currentYear = now.getFullYear();
+
+         let totalDays = 0;
+         let totalAmount = 0;
+         let dayTotal = 0;
+         let nightTotal = 0;
+         let extraTotal = 0;
+
+         // Filter data for current month
+         Object.keys(allData).forEach((dateKey) => {
+            // Parse date key (format: "6/1/2025" or similar)
+            const dateParts = dateKey.split("/");
+            if (dateParts.length >= 3) {
+               const month = parseInt(dateParts[1]);
+               const year = parseInt(dateParts[2]);
+
+               // Check if this entry is from current month and year
+               if (month === currentMonth && year === currentYear) {
+                  const data = allData[dateKey];
+                  if (data.day > 0 || data.night > 0 || data.extra > 0) {
+                     totalDays++;
+                  }
+                  dayTotal += data.day;
+                  nightTotal += data.night;
+                  extraTotal += data.extra;
+                  totalAmount += data.day + data.night + data.extra;
+               }
+            }
+         });
+
+         const monthNames = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+         ];
+
+         return {
+            totalDays,
+            totalAmount,
+            dayTotal,
+            nightTotal,
+            extraTotal,
+            monthName: monthNames[currentMonth - 1],
+            year: currentYear,
+         };
+      } catch (error) {
+         console.error("Error getting current month statistics:", error);
+         return {
+            totalDays: 0,
+            totalAmount: 0,
+            dayTotal: 0,
+            nightTotal: 0,
+            extraTotal: 0,
+            monthName: "Unknown",
+            year: new Date().getFullYear(),
          };
       }
    }

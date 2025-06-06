@@ -160,12 +160,17 @@ const Modify = () => {
    };
 
    return (
-      <View className="flex-1 bg-white pt-10 px-6">
-         <Text className="text-2xl font-bold text-gray-800">Custom Choice</Text>
+      <View className="flex-1 bg-gray-50 pt-8 px-6">
+         {/* Header */}
+         <View className="mb-6">
+            <Text className="text-2xl font-bold text-gray-800">
+               Custom Choice
+            </Text>
 
-         <Text className="text-base text-gray-500 mb-2">
-            Manage your custom selection options
-         </Text>
+            <Text className="text-base text-gray-500 mb-2">
+               Manage your custom selection options
+            </Text>
+         </View>
 
          {/* Add New Value Section */}
          <View className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">

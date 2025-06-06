@@ -37,6 +37,12 @@ export const useMealTracker = () => {
    const [infoModalVisible, setInfoModalVisible] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
 
+   // Cache for loaded meal data to avoid repeated AsyncStorage calls - MOVED TO TOP
+   const [mealDataCache, setMealDataCache] = useState<{ [key: string]: any }>(
+      {}
+   );
+   const [isCacheLoaded, setIsCacheLoaded] = useState(false);
+
    // Generate dates for selected month
    const generateDates = useCallback((): DateInfo[] => {
       const dates = [];
@@ -386,7 +392,7 @@ export const useMealTracker = () => {
       }
    };
 
-   // Load saved data when component mounts or month changes
+   // Load saved data when component mounts or month changes - OPTIMIZED VERSION
    useEffect(() => {
       const loadSavedData = async () => {
          setIsLoading(true);
@@ -394,11 +400,21 @@ export const useMealTracker = () => {
             // Load custom choices first
             await loadModifyValues();
 
+            // Load ALL data into cache at once (much faster than individual calls)
+            const allMealData = await MealDataService.loadAllMealData();
+            setMealDataCache(allMealData);
+            setIsCacheLoaded(true);
+            console.log(
+               "✅ Data cache loaded with",
+               Object.keys(allMealData).length,
+               "entries"
+            );
+
             const dates = generateDates();
             const newSelectedOptions: { [key: string]: MealOption } = {};
             const newCustomValues: { [key: string]: string } = {};
 
-            // Get current custom choices
+            // Get current custom choices directly from AsyncStorage (to ensure we have latest)
             const savedChoicesData = await AsyncStorage.getItem(
                "@meal_tracker_custom_values"
             );
@@ -413,7 +429,7 @@ export const useMealTracker = () => {
                  ]
                : ["--", "50", "100", "OFF", "Custom"];
 
-            // Initialize all dates with default values first
+            // Process all dates using cached data (extremely fast)
             for (const dateInfo of dates) {
                const dayKey = `${dateInfo.fullDate}-day`;
                const nightKey = `${dateInfo.fullDate}-night`;
@@ -436,15 +452,12 @@ export const useMealTracker = () => {
                   isOn: true,
                };
 
-               // Then load saved data if it exists
-               const savedData = await MealDataService.loadMealData(
-                  dateInfo.fullDate
-               );
+               // Use cached data instead of individual AsyncStorage calls
+               const savedData = allMealData[dateInfo.fullDate];
                if (savedData) {
                   // Override with saved values if they exist
                   if (savedData.day > 0) {
                      const dayValue = savedData.day.toString();
-                     // Check if the value exists in choices, otherwise use "Custom" and set custom value
                      if (currentChoices.includes(dayValue)) {
                         newSelectedOptions[dayKey] = {
                            type: "day",
@@ -462,7 +475,6 @@ export const useMealTracker = () => {
                   }
                   if (savedData.night > 0) {
                      const nightValue = savedData.night.toString();
-                     // Check if the value exists in choices, otherwise use "Custom" and set custom value
                      if (currentChoices.includes(nightValue)) {
                         newSelectedOptions[nightKey] = {
                            type: "night",
@@ -480,7 +492,6 @@ export const useMealTracker = () => {
                   }
                   if (savedData.extra > 0) {
                      const extraValue = savedData.extra.toString();
-                     // Check if the value exists in choices, otherwise use "Custom" and set custom value
                      if (currentChoices.includes(extraValue)) {
                         newSelectedOptions[customKey] = {
                            type: "custom",
@@ -501,6 +512,7 @@ export const useMealTracker = () => {
 
             setSelectedOptions(newSelectedOptions);
             setCustomValues(newCustomValues);
+            console.log("✅ Optimized data loading completed");
          } catch (error) {
             console.error("Error loading saved data:", error);
          } finally {
@@ -509,7 +521,7 @@ export const useMealTracker = () => {
       };
 
       loadSavedData();
-   }, [currentMonth, generateDates]); // Removed customChoices dependency
+   }, [currentMonth, generateDates, loadModifyValues]); // Added loadModifyValues dependency
 
    // Auto-save whenever selectedOptions or customValues change
    useEffect(() => {
@@ -577,6 +589,18 @@ export const useMealTracker = () => {
                console.error("Auto-save failed for date", dateKey, ":", error);
             }
          }
+
+         // Refresh cache after auto-save if cache is loaded
+         if (isCacheLoaded) {
+            try {
+               const allData = await MealDataService.loadAllMealData();
+               setMealDataCache(allData);
+               console.log("✅ Cache refreshed after auto-save");
+            } catch (error) {
+               console.error("Error refreshing cache after auto-save:", error);
+            }
+         }
+
          console.log("Auto-save completed");
       };
 
@@ -586,7 +610,25 @@ export const useMealTracker = () => {
          console.log("Auto-save timeout cleared");
          clearTimeout(timeoutId);
       };
-   }, [selectedOptions, customValues, isLoading]);
+   }, [
+      selectedOptions,
+      customValues,
+      isLoading,
+      isCacheLoaded,
+      setMealDataCache,
+   ]);
+
+   // Refresh cache after data changes
+   const refreshDataCache = useCallback(async () => {
+      const allData = await MealDataService.loadAllMealData();
+      setMealDataCache(allData);
+      setIsCacheLoaded(true);
+      console.log(
+         "✅ Cache refreshed with",
+         Object.keys(allData).length,
+         "entries"
+      );
+   }, []);
 
    // Manual save function for immediate saving
    const manualSave = useCallback(async () => {
@@ -621,11 +663,18 @@ export const useMealTracker = () => {
                console.log(`Manually saved data for ${dateKey}:`, mealData);
             }
          }
+
+         // Refresh cache after saving data
+         if (isCacheLoaded) {
+            await refreshDataCache();
+            console.log("✅ Cache refreshed after manual save");
+         }
+
          console.log("Manual save completed");
       } catch (error) {
          console.error("Manual save failed:", error);
       }
-   }, [selectedOptions, customValues]);
+   }, [selectedOptions, customValues, isCacheLoaded, refreshDataCache]);
 
    // Save data when app goes to background
    useEffect(() => {
@@ -643,6 +692,194 @@ export const useMealTracker = () => {
 
       return () => subscription?.remove();
    }, [manualSave]);
+
+   // Load all meal data into cache once (much faster than individual calls)
+   const loadDataCache = useCallback(async () => {
+      try {
+         const allData = await MealDataService.loadAllMealData();
+         setMealDataCache(allData);
+         setIsCacheLoaded(true);
+         console.log(
+            "✅ Data cache loaded with",
+            Object.keys(allData).length,
+            "entries"
+         );
+         return allData;
+      } catch (error) {
+         console.error("Error loading data cache:", error);
+         setMealDataCache({});
+         setIsCacheLoaded(true);
+         return {};
+      }
+   }, []);
+
+   // Fast reload function that uses cached data
+   const reloadAllData = useCallback(async () => {
+      console.log("🔄 Fast reload triggered...");
+      setIsLoading(true);
+
+      try {
+         // Always reload custom choices to ensure they're current
+         await loadModifyValues();
+
+         // Load data cache if not already loaded
+         let dataCache = mealDataCache;
+         if (!isCacheLoaded) {
+            dataCache = await loadDataCache();
+         }
+
+         const dates = generateDates();
+         const newSelectedOptions: { [key: string]: MealOption } = {};
+         const newCustomValues: { [key: string]: string } = {};
+
+         // Get current custom choices (from state, no AsyncStorage call)
+         const currentChoices =
+            customChoices.length > 0
+               ? customChoices
+               : ["--", "50", "100", "OFF", "Custom"];
+
+         // Process all dates using cached data (very fast)
+         for (const dateInfo of dates) {
+            const dayKey = `${dateInfo.fullDate}-day`;
+            const nightKey = `${dateInfo.fullDate}-night`;
+            const customKey = `${dateInfo.fullDate}-custom`;
+
+            // Set default values
+            newSelectedOptions[dayKey] = {
+               type: "day",
+               value: "--",
+               isOn: true,
+            };
+            newSelectedOptions[nightKey] = {
+               type: "night",
+               value: "--",
+               isOn: true,
+            };
+            newSelectedOptions[customKey] = {
+               type: "custom",
+               value: "OFF",
+               isOn: true,
+            };
+
+            // Use cached data instead of AsyncStorage call
+            const savedData = dataCache[dateInfo.fullDate];
+            if (savedData) {
+               if (savedData.day > 0) {
+                  const dayValue = savedData.day.toString();
+                  if (currentChoices.includes(dayValue)) {
+                     newSelectedOptions[dayKey] = {
+                        type: "day",
+                        value: dayValue,
+                        isOn: true,
+                     };
+                  } else {
+                     newSelectedOptions[dayKey] = {
+                        type: "day",
+                        value: "Custom",
+                        isOn: true,
+                     };
+                     newCustomValues[dayKey] = dayValue;
+                  }
+               }
+               if (savedData.night > 0) {
+                  const nightValue = savedData.night.toString();
+                  if (currentChoices.includes(nightValue)) {
+                     newSelectedOptions[nightKey] = {
+                        type: "night",
+                        value: nightValue,
+                        isOn: true,
+                     };
+                  } else {
+                     newSelectedOptions[nightKey] = {
+                        type: "night",
+                        value: "Custom",
+                        isOn: true,
+                     };
+                     newCustomValues[nightKey] = nightValue;
+                  }
+               }
+               if (savedData.extra > 0) {
+                  const extraValue = savedData.extra.toString();
+                  if (currentChoices.includes(extraValue)) {
+                     newSelectedOptions[customKey] = {
+                        type: "custom",
+                        value: extraValue,
+                        isOn: true,
+                     };
+                  } else {
+                     newSelectedOptions[customKey] = {
+                        type: "custom",
+                        value: "Custom",
+                        isOn: true,
+                     };
+                     newCustomValues[customKey] = extraValue;
+                  }
+               }
+            }
+         }
+
+         setSelectedOptions(newSelectedOptions);
+         setCustomValues(newCustomValues);
+         console.log("✅ Fast reload completed");
+      } catch (error) {
+         console.error("Error in fast reload:", error);
+      } finally {
+         setIsLoading(false);
+      }
+   }, [
+      generateDates,
+      mealDataCache,
+      isCacheLoaded,
+      customChoices,
+      loadDataCache,
+      loadModifyValues,
+   ]);
+
+   // Clear all data function - clears both AsyncStorage and in-memory state
+   const clearAllData = useCallback(async () => {
+      try {
+         console.log("🧹 Starting complete data clear process...");
+
+         // 1. First clear AsyncStorage (only meal data, preserve custom choices)
+         await MealDataService.clearAllData();
+         console.log("✅ AsyncStorage meal data cleared");
+
+         // 2. Then clear all in-memory state (except custom choices which are preserved)
+         console.log("🧹 Clearing in-memory state...");
+
+         // Reset selected options to empty
+         setSelectedOptions({});
+
+         // Reset custom values to empty
+         setCustomValues({});
+
+         // Reset dropdown states
+         setDropdownStates({});
+
+         // DO NOT reset custom choices - these are user's dropdown options and should be preserved
+         // setCustomChoices(["--", "50", "100", "OFF", "Custom"]); // REMOVED
+
+         // Reload custom choices from AsyncStorage (they should still be there)
+         await loadModifyValues();
+
+         // Clear cache state
+         setMealDataCache({});
+         setIsCacheLoaded(false);
+
+         // Reset loading state
+         setIsLoading(false);
+
+         console.log(
+            "✅ In-memory meal data cleared (custom choices preserved)"
+         );
+         console.log("🎉 Complete meal data clear successful!");
+
+         return true;
+      } catch (error) {
+         console.error("❌ Error during complete data clear:", error);
+         throw error;
+      }
+   }, [loadModifyValues]);
 
    return {
       // State
@@ -670,5 +907,8 @@ export const useMealTracker = () => {
       exportData,
       importData,
       manualSave,
+      reloadAllData,
+      clearAllData,
+      refreshDataCache,
    };
 };
