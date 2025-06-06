@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import DropdownCard from "../components/DropdownCard";
 import Navigation from "../components/Navigation";
@@ -30,16 +31,35 @@ export default function Index() {
    }>({});
    const [currentMonth, setCurrentMonth] = useState(new Date()); // Use current date instead of fixed June 2025
 
+   const [customChoices, setCustomChoices] = useState<string[]>([]);
+
    // Handle date change from Navigation component
    const handleDateChange = (newDate: Date) => {
       setCurrentMonth(newDate);
    };
 
    const toggleDropdown = (key: string) => {
-      setDropdownStates((prev) => ({
-         ...prev,
-         [key]: !prev[key],
-      }));
+      setDropdownStates((prev) => {
+         // Close all other dropdowns when opening a new one
+         const newStates: { [key: string]: boolean } = {};
+         Object.keys(prev).forEach((k) => {
+            newStates[k] = false;
+         });
+         // Toggle the clicked dropdown
+         newStates[key] = !prev[key];
+         return newStates;
+      });
+   };
+
+   // Function to close all dropdowns
+   const closeAllDropdowns = () => {
+      setDropdownStates((prev) => {
+         const newStates: { [key: string]: boolean } = {};
+         Object.keys(prev).forEach((k) => {
+            newStates[k] = false;
+         });
+         return newStates;
+      });
    };
 
    // Generate dates for selected month
@@ -79,7 +99,32 @@ export default function Index() {
    };
 
    const dates = generateDates();
-   const customChoices = ["40", "60", "90", "Custom"];
+
+   // Function to load custom values from AsyncStorage
+   const loadModifyValues = async () => {
+      try {
+         const savedValues = await AsyncStorage.getItem(
+            "@meal_tracker_custom_values"
+         );
+         if (savedValues) {
+            const parsedValues: string[] = JSON.parse(savedValues);
+            const sortedValues = parsedValues.sort(
+               (a: string, b: string) => parseInt(a) - parseInt(b)
+            );
+            setCustomChoices(["--" , ...sortedValues, "OFF", "Custom"]);
+         } else {
+            setCustomChoices(["--", "50", "100", "OFF", "Custom"]);
+         }
+      } catch (error) {
+         console.error("Error loading modify values:", error);
+         setCustomChoices(["--", "40", "OFF", "Custom"]);
+      }
+   };
+
+
+   useEffect(() => {
+      loadModifyValues();
+   }, [customChoices]);
 
    const handleValueSelect = (dateKey: string, value: string) => {
       setSelectedOptions((prev) => ({
@@ -138,47 +183,49 @@ export default function Index() {
             toggleDropdown={toggleDropdown}
             handleValueSelect={handleValueSelect}
             handleCustomValueChange={handleCustomValueChange}
+            closeAllDropdowns={closeAllDropdowns}
          />
       );
 
       return (
-         <View key={dateKey} className="flex-row border-b border-gray-200 py-2">
+         <View
+            key={dateKey}
+            className="flex-row py-2 mx-1 mb-2 rounded-md bg-blue-500/5 border-b border-gray-300"
+         >
             {/* Date Column - flex-4 */}
-            <View className="flex-[4] px-2 justify-center">
+            <View className="w-full flex flex-[4] justify-center items-center">
                <Text className="text-sm font-medium text-gray-800">
                   {dateInfo.date}
                </Text>
                <Text className="text-xs text-gray-500">{dateInfo.day}</Text>
+               {/* add icon */}
+               <View className="absolute w-8 h-9 bg-blue-200/90 rounded-lg -z-10"></View>
             </View>
 
             {/* Day Column - flex-8 */}
-            <View className="flex-[8] justify-center">
+            <View className="w-full flex flex-[8] justify-center ">
                {renderDropdown(dayKey, daySelected)}
             </View>
 
             {/* Night Column - flex-8 */}
-            <View className="flex-[8] justify-center">
+            <View className="w-full flex flex-[8] justify-center ">
                {renderDropdown(nightKey, nightSelected)}
             </View>
 
             {/* Custom Column - flex-8 */}
-            <View className="flex-[8] justify-center">
+            <View className="w-full flex flex-[8] justify-center ">
                {renderDropdown(customKey, customSelected)}
             </View>
 
             {/* Status Column - flex-6 */}
-            <View className="flex-[6] px-2 justify-center items-center">
+            <View className="w-full flex-[6] flex justify-center items-center">
                <TouchableOpacity
                   onPress={() => handleToggle(dayKey)}
-                  className={`p-2 rounded-full ${
-                     daySelected.isOn ? "bg-green-500" : "bg-red-500"
+                  className={`rounded-xl px-3 py-2 ${
+                     daySelected.isOn ? "bg-emerald-500" : "bg-orange-400"
                   }`}
                >
-                  <Ionicons
-                     name={daySelected.isOn ? "checkmark" : "close"}
-                     size={12}
-                     color="white"
-                  />
+                  <Ionicons name="power-outline" size={12} color="white" />
                </TouchableOpacity>
             </View>
          </View>
@@ -250,7 +297,7 @@ export default function Index() {
       <View className="flex-1 bg-base">
          <Navigation className="pt-10 h-28" onDateChange={handleDateChange} />
 
-         <View className="flex-row bg-gray-100 py-3 px-2 border-b border-gray-300">
+         <View className="flex-row bg-gray-100 p-3 border-b border-gray-300">
             <TView label="Date" className="flex-[4] bg-red-500" />
             <TView label="Day" className="flex-[8] bg-blue-500" />
             <TView label="Night " className="flex-[8] bg-purple-500" />
@@ -259,51 +306,18 @@ export default function Index() {
          </View>
 
          {/* Table Rows */}
-         <ScrollView className="flex-col px-2 gpa">
+         <ScrollView
+            className="flex-col px-2 my-1 gap-x-2"
+            onScrollBeginDrag={closeAllDropdowns}
+         >
             {dates.map(renderRow)}
          </ScrollView>
 
          {/* Summary */}
          <View className="bg-gray-50 p-4 border-t border-gray-300">
-            <Text className="text-lg font-bold text-gray-800 mb-3">
-               Summary for {dates[0]?.monthName} {dates[0]?.year}
+            <Text className="text-sm font-bold text-blue-600">
+               {summary.dayTotal}
             </Text>
-
-            <View className="flex-row justify-between mb-2">
-               <Text className="text-sm font-medium text-gray-600">
-                  Day Total:
-               </Text>
-               <Text className="text-sm font-bold text-blue-600">
-                  {summary.dayTotal}
-               </Text>
-            </View>
-
-            <View className="flex-row justify-between mb-2">
-               <Text className="text-sm font-medium text-gray-600">
-                  Night Total:
-               </Text>
-               <Text className="text-sm font-bold text-purple-600">
-                  {summary.nightTotal}
-               </Text>
-            </View>
-
-            <View className="flex-row justify-between mb-2">
-               <Text className="text-sm font-medium text-gray-600">
-                  Custom Total:
-               </Text>
-               <Text className="text-sm font-bold text-green-600">
-                  {summary.customTotal}
-               </Text>
-            </View>
-
-            <View className="flex-row justify-between mb-3">
-               <Text className="text-sm font-medium text-gray-600">
-                  Active Days:
-               </Text>
-               <Text className="text-sm font-bold text-orange-600">
-                  {summary.onCount}
-               </Text>
-            </View>
 
             <View className="flex-row justify-between border-t border-gray-300 pt-3">
                <Text className="text-base font-bold text-gray-800">

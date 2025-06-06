@@ -1,24 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+   Dimensions,
    ScrollView,
    Text,
    TextInput,
    TouchableOpacity,
    View,
 } from "react-native";
-
-/**
- * @typedef {Object} DropdownCardProps
- * @property {string} typeKey
- * @property {{ value: string, isOn: boolean }} typeSelected
- * @property {string[]=} customChoices
- * @property {{ [key: string]: boolean }} dropdownStates
- * @property {{ [key: string]: string }} customValues
- * @property {(key: string) => void} toggleDropdown
- * @property {(typeKey: string, value: string) => void} handleValueSelect
- * @property {(typeKey: string, customValue: string) => void} handleCustomValueChange
- */
 
 interface DropdownCardProps {
    typeKey: string;
@@ -32,70 +20,148 @@ interface DropdownCardProps {
    toggleDropdown: (key: string) => void;
    handleValueSelect: (typeKey: string, value: string) => void;
    handleCustomValueChange: (typeKey: string, customValue: string) => void;
+   closeAllDropdowns?: () => void; // Optional function to close all dropdowns
 }
 
 const DropdownCard: React.FC<DropdownCardProps> = ({
    typeKey,
    typeSelected,
-   customChoices = ["40", "60", "90", "Custom"],
+   customChoices = ["--", "40", "OFF", "Custom"],
    dropdownStates,
    customValues,
    toggleDropdown,
    handleValueSelect,
    handleCustomValueChange,
+   closeAllDropdowns,
 }) => {
-   return (
-      <View className="px-1 relative">
-         <TouchableOpacity
-            onPress={() => toggleDropdown(typeKey)}
-            className="bg-white border border-gray-300 rounded px-2 py-1 mb-1 flex-row justify-between items-center min-h-[32px]"
-         >
-            <Text className="text-xs text-gray-700 flex-1">
-               {typeSelected.value || "Select"}
-            </Text>
-            <Ionicons
-               name={dropdownStates[typeKey] ? "chevron-up" : "chevron-down"}
-               size={12}
-               color="#666"
-            />
-         </TouchableOpacity>
+   const [dropdownPosition, setDropdownPosition] = useState<"above" | "below">(
+      "below"
+   );
+   const buttonRef = useRef<View>(null);
 
-         {dropdownStates[typeKey] && (
+   // Refresh values when dropdown is opened (to catch any changes from settings)
+   const isDropdownOpen = dropdownStates[typeKey];
+
+   // Calculate dropdown height based on number of choices
+   // Show max 4 items at a time (4 * 44px + 8px padding = 184px), then make it scrollable
+   const maxVisibleItems = 4;
+   const itemHeight = 36;
+   const padding = 8;
+   const dropdownHeight = Math.min(
+      customChoices.length * itemHeight + padding,
+      maxVisibleItems * itemHeight + padding
+   );
+
+   // Function to determine dropdown position based on screen position
+   const determineDropdownPosition = () => {
+      if (!buttonRef.current) return;
+
+      buttonRef.current.measure((x, y, width, height, pageX, pageY) => {
+         const screenHeight = Dimensions.get("window").height;
+         const buttonCenterY = pageY + height / 2;
+         const screenCenterY = screenHeight / 2;
+
+         // Show dropdown above if button is in bottom half of screen
+         const shouldShowAbove = buttonCenterY > screenCenterY;
+         setDropdownPosition(shouldShowAbove ? "above" : "below");
+      });
+   };
+
+   // Determine position when dropdown opens
+   useEffect(() => {
+      if (isDropdownOpen) {
+         determineDropdownPosition();
+      }
+   }, [isDropdownOpen]);
+
+   return (
+      <View className="relative mx-0.5">
+         {/* Show Custom Input instead of dropdown when Custom is selected */}
+         {typeSelected.value === "Custom" ? (
+            <TextInput
+               className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row flex justify-between items-center shadow-sm text-center"
+               placeholder="Enter..."
+               value={customValues[typeKey] || ""}
+               onChangeText={(text) => handleCustomValueChange(typeKey, text)}
+               onFocus={() => {
+                  // Close all dropdowns when user focuses on custom input
+                  if (closeAllDropdowns) {
+                     closeAllDropdowns();
+                  }
+               }}
+               keyboardType="numeric"
+               style={{ minHeight: 36, zIndex: 50 }}
+            />
+         ) : (
+            /* Dropdown Button */
+            <TouchableOpacity
+               ref={buttonRef}
+               onPress={() => toggleDropdown(typeKey)}
+               className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row flex justify-between items-center shadow-sm"
+               style={{ minHeight: 36, zIndex: 50 }}
+            >
+               <Text className=" text-center text-gray-800 flex-1 font-medium">
+                  {typeSelected.value || "--"}
+               </Text>
+            </TouchableOpacity>
+         )}
+
+         {/* Dropdown Menu - only show when not Custom */}
+         {dropdownStates[typeKey] && typeSelected.value !== "Custom" && (
             <View
-               className="absolute left-1 right-1 bg-white border border-gray-300 rounded shadow-lg z-50"
+               className="absolute left-1 right-1 bg-white rounded-lg shadow-lg border border-gray-100"
                style={{
-                  bottom: 40, // Position above the button
-                  minHeight: 120, // Fixed height for 4 options
+                  ...(dropdownPosition === "above"
+                     ? { bottom: 42 } // Position above the button
+                     : { top: 42 }), // Position below the button
+                  height: dropdownHeight,
+                  zIndex: 60,
                }}
             >
                <ScrollView
-                  className="max-h-32"
+                  showsVerticalScrollIndicator={
+                     customChoices.length > maxVisibleItems
+                  }
+                  className="rounded-lg"
                   nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={false}
                >
                   {customChoices.map((choice, index) => (
                      <TouchableOpacity
                         key={choice}
                         onPress={() => {
                            handleValueSelect(typeKey, choice);
-                           toggleDropdown(typeKey);
+                           // Close all dropdowns after selection
+                           if (closeAllDropdowns) {
+                              closeAllDropdowns();
+                           } else {
+                              toggleDropdown(typeKey);
+                           }
                         }}
-                        className={`px-3 py-2 ${
-                           index < customChoices.length - 1
-                              ? "border-b border-gray-100"
+                        className={`flex justify-center items-center h-[30] ${
+                           index === 0 ? "rounded-t-lg" : ""
+                        } ${
+                           index === customChoices.length - 1
+                              ? "rounded-b-lg"
                               : ""
                         } ${
                            typeSelected.value === choice
-                              ? "bg-blue-500"
+                              ? "bg-blue-50 border-l-2 border-l-blue-500"
                               : "bg-white hover:bg-gray-50"
                         }`}
+                        style={{
+                           borderBottomWidth:
+                              index < customChoices.length - 1 ? 1 : 0,
+                           borderBottomColor: "#F3F4F6",
+                        }}
                      >
                         <Text
-                           className={`text-xs text-center ${
+                           className={`text-sm ${
                               typeSelected.value === choice
-                                 ? "text-white font-medium"
+                                 ? "text-blue-700 font-semibold"
                                  : "text-gray-700"
                            }`}
+                           numberOfLines={1}
+                           ellipsizeMode="tail"
                         >
                            {choice}
                         </Text>
@@ -103,16 +169,6 @@ const DropdownCard: React.FC<DropdownCardProps> = ({
                   ))}
                </ScrollView>
             </View>
-         )}
-
-         {typeSelected.value === "Custom" && (
-            <TextInput
-               className="bg-white border border-gray-300 rounded px-2 py-1 text-xs mt-1"
-               placeholder="Enter value"
-               value={customValues[typeKey] || ""}
-               onChangeText={(text) => handleCustomValueChange(typeKey, text)}
-               keyboardType="numeric"
-            />
          )}
       </View>
    );

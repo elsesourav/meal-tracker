@@ -33,12 +33,20 @@ const Modify = () => {
          try {
             const savedValues = await AsyncStorage.getItem(STORAGE_KEY);
             if (savedValues) {
-               const parsedValues = JSON.parse(savedValues);
-               setValues(parsedValues);
+               const parsedValues: string[] = JSON.parse(savedValues);
+               setValues(
+                  parsedValues.sort(
+                     (a: string, b: string) => parseInt(a) - parseInt(b)
+                  )
+               );
             } else {
                // Set default values if no saved data exists
                const defaultValues = ["40", "60", "90"];
-               setValues(defaultValues);
+               setValues(
+                  defaultValues.sort(
+                     (a: string, b: string) => parseInt(a) - parseInt(b)
+                  )
+               );
             }
          } catch (error) {
             console.error("Error loading saved values:", error);
@@ -102,7 +110,13 @@ const Modify = () => {
          return;
       }
 
-      setValues([...values, trimmedValue]);
+      // No limit on number of values - users can add as many as they want
+
+      setValues(
+         [...values, trimmedValue].sort(
+            (a: string, b: string) => parseInt(a) - parseInt(b)
+         )
+      );
       setNewValue("");
       showToast(`"${trimmedValue}" added successfully!`, "success");
    };
@@ -151,13 +165,18 @@ const Modify = () => {
 
          {/* Add New Value Section */}
          <View className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
-            <Text className="text-base font-semibold text-gray-700 mb-3">
-               Add New Choice
-            </Text>
+            <View className="flex-row justify-between items-center mb-3">
+               <Text className="text-base font-semibold text-gray-700">
+                  Add New Choice
+               </Text>
+               <Text className="text-sm font-medium text-gray-500">
+                  {values.length} choices
+               </Text>
+            </View>
 
             <View className="flex-row gap-3">
                <TextInput
-                  className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-base"
+                  className="flex-1 border rounded-lg px-3 py-2.5 bg-white border-gray-300 text-gray-950"
                   placeholder="Enter numeric value only..."
                   value={newValue}
                   onChangeText={handleTextChange}
@@ -167,7 +186,7 @@ const Modify = () => {
 
                <TouchableOpacity
                   onPress={addValue}
-                  className="bg-blue-600 px-4 py-2.5 rounded-lg justify-center items-center"
+                  className="px-4 py-2.5 rounded-lg justify-center items-center bg-blue-600"
                >
                   <Ionicons name="add" size={20} color="white" />
                </TouchableOpacity>
@@ -227,7 +246,6 @@ const Modify = () => {
             title="Duplicate Choice"
             message="This Choice already exists in your list. Please enter a different choice."
             onCancel={closeDuplicateAlert}
-            onConfirm={null}
             type="info"
          />
 
@@ -236,7 +254,6 @@ const Modify = () => {
             title="Invalid Choice"
             message="Please enter only numeric values without decimal points, letters, or special characters."
             onCancel={closeInvalidValueAlert}
-            onConfirm={null}
             type="info"
          />
 
