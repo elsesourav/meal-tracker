@@ -215,19 +215,14 @@ export const useMealTracker = () => {
    };
 
    const handleValueSelect = (dateKey: string, value: string) => {
-      console.log("handleValueSelect called:", { dateKey, value });
-      setSelectedOptions((prev) => {
-         const newOptions = {
-            ...prev,
-            [dateKey]: {
-               ...prev[dateKey],
-               value: value,
-               isOn: true,
-            },
-         };
-         console.log("New selected options:", newOptions[dateKey]);
-         return newOptions;
-      });
+      setSelectedOptions((prev) => ({
+         ...prev,
+         [dateKey]: {
+            ...prev[dateKey],
+            value: value,
+            isOn: true,
+         },
+      }));
    };
 
    const handleCustomValueChange = (dateKey: string, customValue: string) => {
@@ -359,6 +354,25 @@ export const useMealTracker = () => {
       }
    };
 
+   // Simple save function - saves all current data
+   const saveData = useCallback(async () => {
+      if (Object.keys(selectedOptions).length === 0) {
+         console.log("No data to save");
+         return;
+      }
+
+      try {
+         console.log("Saving data...");
+         await MealDataService.saveAllCurrentData(
+            selectedOptions,
+            customValues
+         );
+         console.log("✅ Data saved successfully");
+      } catch (error) {
+         console.error("❌ Save failed:", error);
+      }
+   }, [selectedOptions, customValues]);
+
    // Export data function
    const exportData = async (): Promise<boolean> => {
       try {
@@ -381,7 +395,6 @@ export const useMealTracker = () => {
 
             // Reload data after import
             await loadModifyValues();
-            // Reload all data to reflect imported data
             await reloadAllData();
             console.log("✅ Data reloaded after import");
          }
@@ -391,25 +404,6 @@ export const useMealTracker = () => {
          return false;
       }
    };
-
-   // Simple save function - saves all current data
-   const saveData = useCallback(async () => {
-      if (Object.keys(selectedOptions).length === 0) {
-         console.log("No data to save");
-         return;
-      }
-
-      try {
-         console.log("Saving data...");
-         await MealDataService.saveAllCurrentData(
-            selectedOptions,
-            customValues
-         );
-         console.log("✅ Data saved successfully");
-      } catch (error) {
-         console.error("❌ Save failed:", error);
-      }
-   }, [selectedOptions, customValues]);
 
    // Load data when month changes
    useEffect(() => {
@@ -540,7 +534,24 @@ export const useMealTracker = () => {
       loadDataForMonth();
    }, [currentMonth, generateDates, loadModifyValues]);
 
-   // Simple reload function
+   // Save data when app goes to background
+   useEffect(() => {
+      const handleAppStateChange = (nextAppState: string) => {
+         if (nextAppState === "background" || nextAppState === "inactive") {
+            console.log("App going to background, saving data...");
+            saveData();
+         }
+      };
+
+      const subscription = AppState.addEventListener(
+         "change",
+         handleAppStateChange
+      );
+
+      return () => subscription?.remove();
+   }, [saveData]);
+
+   // Simple data reload function
    const reloadAllData = useCallback(async () => {
       console.log("🔄 Reloading data...");
       setIsLoading(true);
@@ -556,19 +567,10 @@ export const useMealTracker = () => {
          const newCustomValues: { [key: string]: string } = {};
 
          // Get current custom choices
-         const savedChoicesData = await AsyncStorage.getItem(
-            "@meal_tracker_custom_values"
-         );
-         const currentChoices = savedChoicesData
-            ? [
-                 "--",
-                 ...JSON.parse(savedChoicesData).sort(
-                    (a: string, b: string) => parseInt(a) - parseInt(b)
-                 ),
-                 "OFF",
-                 "Custom",
-              ]
-            : ["--", "50", "100", "OFF", "Custom"];
+         const currentChoices =
+            customChoices.length > 0
+               ? customChoices
+               : ["--", "50", "100", "OFF", "Custom"];
 
          // Process all dates
          for (const dateInfo of dates) {
@@ -598,7 +600,6 @@ export const useMealTracker = () => {
             const savedData = allMealData[year]?.[month]?.[day];
 
             if (savedData) {
-               // Process values similar to loadDataForMonth
                if (savedData.day > 0) {
                   const dayValue = savedData.day.toString();
                   if (currentChoices.includes(dayValue)) {
@@ -616,7 +617,6 @@ export const useMealTracker = () => {
                      newCustomValues[dayKey] = dayValue;
                   }
                }
-
                if (savedData.night > 0) {
                   const nightValue = savedData.night.toString();
                   if (currentChoices.includes(nightValue)) {
@@ -634,7 +634,6 @@ export const useMealTracker = () => {
                      newCustomValues[nightKey] = nightValue;
                   }
                }
-
                if (savedData.extra > 0) {
                   const extraValue = savedData.extra.toString();
                   if (currentChoices.includes(extraValue)) {
@@ -663,83 +662,54 @@ export const useMealTracker = () => {
       } finally {
          setIsLoading(false);
       }
-   }, [generateDates, loadModifyValues]);
+   }, [generateDates, customChoices, loadModifyValues]);
 
-   // Simple clear all data function
+   // Clear all data function
    const clearAllData = useCallback(async () => {
       try {
          console.log("🗑️ Clearing all data...");
 
          // Clear stored data from AsyncStorage
          await MealDataService.clearAllData();
-         console.log("✅ Storage cleared");
 
-         // Reset UI state to defaults for current month
+         // Reset UI state to defaults
          const dates = generateDates();
-         const defaultSelectedOptions: { [key: string]: MealOption } = {};
-         const defaultCustomValues: { [key: string]: string } = {};
+         const newSelectedOptions: { [key: string]: MealOption } = {};
+         const newCustomValues: { [key: string]: string } = {};
 
-         // Set default values for all dates in current month
          dates.forEach((dateInfo) => {
             const dayKey = `${dateInfo.fullDate}-day`;
             const nightKey = `${dateInfo.fullDate}-night`;
             const customKey = `${dateInfo.fullDate}-custom`;
 
-            defaultSelectedOptions[dayKey] = {
+            newSelectedOptions[dayKey] = {
                type: "day",
                value: "--",
                isOn: true,
             };
-            defaultSelectedOptions[nightKey] = {
+            newSelectedOptions[nightKey] = {
                type: "night",
                value: "--",
                isOn: true,
             };
-            defaultSelectedOptions[customKey] = {
+            newSelectedOptions[customKey] = {
                type: "custom",
                value: "OFF",
                isOn: true,
             };
-
-            defaultCustomValues[dayKey] = "";
-            defaultCustomValues[nightKey] = "";
-            defaultCustomValues[customKey] = "";
          });
 
-         console.log("============================\n");
-         console.log(defaultCustomValues);
-         console.log(defaultSelectedOptions);
-         console.log("\n============================");
-         
-         
-
-         setSelectedOptions(defaultSelectedOptions);
-         setCustomValues(defaultCustomValues);
+         setSelectedOptions(newSelectedOptions);
+         setCustomValues(newCustomValues);
          setDropdownStates({});
 
-         console.log("✅ All data cleared and UI reset");
+         console.log("✅ All data cleared");
          return true;
       } catch (error) {
          console.error("❌ Error clearing data:", error);
          throw error;
       }
    }, [generateDates]);
-
-   // Save data when app goes to background
-   useEffect(() => {
-      const handleAppStateChange = (nextAppState: string) => {
-         if (nextAppState === "background" || nextAppState === "inactive") {
-            console.log("App going to background, saving data...");
-            saveData();
-         }
-      };
-
-      const subscription = AppState.addEventListener(
-         "change",
-         handleAppStateChange
-      );
-      return () => subscription?.remove();
-   }, [saveData]);
 
    return {
       // State

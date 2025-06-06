@@ -7,11 +7,15 @@ import CustomDatePicker from "./CustomDatePicker";
 interface NavigationProps {
    className?: string;
    onDateChange?: (date: Date) => void;
+   onSettingsPress?: () => Promise<void>;
+   onSaveBeforeDateChange?: () => Promise<void>;
 }
 
 const Navigation: React.FC<NavigationProps> = ({
    className = "",
    onDateChange,
+   onSettingsPress,
+   onSaveBeforeDateChange,
 }) => {
    const router = useRouter();
    const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -33,7 +37,17 @@ const Navigation: React.FC<NavigationProps> = ({
       "December",
    ];
 
-   const goToPreviousMonth = () => {
+   const goToPreviousMonth = async () => {
+      // Save current data before changing month
+      if (onSaveBeforeDateChange) {
+         try {
+            await onSaveBeforeDateChange();
+            console.log("✅ Data saved before going to previous month");
+         } catch (error) {
+            console.error("❌ Error saving data before month change:", error);
+         }
+      }
+
       const newDate = new Date(
          currentDate.getFullYear(),
          currentDate.getMonth() - 1,
@@ -43,7 +57,17 @@ const Navigation: React.FC<NavigationProps> = ({
       onDateChange?.(newDate);
    };
 
-   const goToNextMonth = () => {
+   const goToNextMonth = async () => {
+      // Save current data before changing month
+      if (onSaveBeforeDateChange) {
+         try {
+            await onSaveBeforeDateChange();
+            console.log("✅ Data saved before going to next month");
+         } catch (error) {
+            console.error("❌ Error saving data before month change:", error);
+         }
+      }
+
       const newDate = new Date(
          currentDate.getFullYear(),
          currentDate.getMonth() + 1,
@@ -57,13 +81,38 @@ const Navigation: React.FC<NavigationProps> = ({
       setIsDatePickerVisible(true);
    };
 
-   const handleDateSelect = (year: number, month: number) => {
+   const handleDateSelect = async (year: number, month: number) => {
+      // Save current data before changing to custom date
+      if (onSaveBeforeDateChange) {
+         try {
+            await onSaveBeforeDateChange();
+            console.log("✅ Data saved before custom date change");
+         } catch (error) {
+            console.error(
+               "❌ Error saving data before custom date change:",
+               error
+            );
+         }
+      }
+
       const newDate = new Date(year, month, 1);
       setCurrentDate(newDate);
       onDateChange?.(newDate);
    };
 
-   const navigateToSettings = () => {
+   const navigateToSettings = async () => {
+      // Save data before navigating to settings for up-to-date status
+      if (onSettingsPress) {
+         try {
+            await onSettingsPress();
+            console.log("✅ Data saved before navigating to settings");
+         } catch (error) {
+            console.error(
+               "❌ Error saving data before settings navigation:",
+               error
+            );
+         }
+      }
       router.push("/settings" as any);
    };
 

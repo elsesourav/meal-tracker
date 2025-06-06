@@ -80,70 +80,101 @@ export class MealDataService {
       return flatData;
    }
 
-   // Convert UI state to MealData format for a specific date
-   static convertToMealData(
-      dateKey: string,
-      selectedOptions: { [key: string]: { type: string; value: string; isOn: boolean } },
+   // Simple save method - saves all current data at once
+   static async saveAllCurrentData(
+      selectedOptions: {
+         [key: string]: { type: string; value: string; isOn: boolean };
+      },
       customValues: { [key: string]: string }
-   ): MealData {
-      const dayKey = `${dateKey}-day`;
-      const nightKey = `${dateKey}-night`;
-      const customKey = `${dateKey}-custom`;
-
-      const daySelected = selectedOptions[dayKey];
-      const nightSelected = selectedOptions[nightKey];
-      const customSelected = selectedOptions[customKey];
-
-      let day = 0;
-      let night = 0;
-      let extra = 0;
-
-      // Process day value
-      if (daySelected?.value && daySelected.value !== "--" && daySelected.value !== "OFF") {
-         if (daySelected.value === "Custom") {
-            day = parseInt(customValues[dayKey] || "0");
-         } else {
-            day = parseInt(daySelected.value || "0");
-         }
-         if (isNaN(day)) day = 0;
-      }
-
-      // Process night value
-      if (nightSelected?.value && nightSelected.value !== "--" && nightSelected.value !== "OFF") {
-         if (nightSelected.value === "Custom") {
-            night = parseInt(customValues[nightKey] || "0");
-         } else {
-            night = parseInt(nightSelected.value || "0");
-         }
-         if (isNaN(night)) night = 0;
-      }
-
-      // Process custom/extra value
-      if (customSelected?.value && customSelected.value !== "--" && customSelected.value !== "OFF") {
-         if (customSelected.value === "Custom") {
-            extra = parseInt(customValues[customKey] || "0");
-         } else {
-            extra = parseInt(customSelected.value || "0");
-         }
-         if (isNaN(extra)) extra = 0;
-      }
-
-      return { day, night, extra };
-   }
-
-   // Save meal data for a specific date
-   static async saveMealData(dateKey: string, data: MealData): Promise<void> {
+   ): Promise<void> {
       try {
-         const { year, month, day } = this.parseDateKey(dateKey);
          const existingData = await this.loadAllMealData();
 
-         if (!existingData[year]) {
-            existingData[year] = {};
+         // Extract all unique date keys from selected options
+         const dateKeys = new Set<string>();
+         Object.keys(selectedOptions).forEach((key) => {
+            if (key.includes("-")) {
+               const datePart = key.split("-")[0];
+               dateKeys.add(datePart);
+            }
+         });
+
+         // Process each date
+         for (const dateKey of dateKeys) {
+            const dayKey = `${dateKey}-day`;
+            const nightKey = `${dateKey}-night`;
+            const customKey = `${dateKey}-custom`;
+
+            const daySelected = selectedOptions[dayKey];
+            const nightSelected = selectedOptions[nightKey];
+            const customSelected = selectedOptions[customKey];
+
+            let day = 0,
+               night = 0,
+               extra = 0;
+
+            // Process day value
+            if (
+               daySelected?.value &&
+               daySelected.value !== "--" &&
+               daySelected.value !== "OFF"
+            ) {
+               const value =
+                  daySelected.value === "Custom"
+                     ? parseInt(customValues[dayKey] || "0")
+                     : parseInt(daySelected.value || "0");
+               if (!isNaN(value)) day = value;
+            }
+
+            // Process night value
+            if (
+               nightSelected?.value &&
+               nightSelected.value !== "--" &&
+               nightSelected.value !== "OFF"
+            ) {
+               const value =
+                  nightSelected.value === "Custom"
+                     ? parseInt(customValues[nightKey] || "0")
+                     : parseInt(nightSelected.value || "0");
+               if (!isNaN(value)) night = value;
+            }
+
+            // Process custom/extra value
+            if (
+               customSelected?.value &&
+               customSelected.value !== "--" &&
+               customSelected.value !== "OFF"
+            ) {
+               const value =
+                  customSelected.value === "Custom"
+                     ? parseInt(customValues[customKey] || "0")
+                     : parseInt(customSelected.value || "0");
+               if (!isNaN(value)) extra = value;
+            }
+
+            // Save or delete based on whether there's any data
+            const { year, month, day: dayNum } = this.parseDateKey(dateKey);
+
+            if (day > 0 || night > 0 || extra > 0) {
+               // Save data
+               if (!existingData[year]) existingData[year] = {};
+               if (!existingData[year][month]) existingData[year][month] = {};
+               existingData[year][month][dayNum] = { day, night, extra };
+            } else {
+               // Remove data if all values are zero
+               if (existingData[year]?.[month]?.[dayNum]) {
+                  delete existingData[year][month][dayNum];
+
+                  // Cleanup empty objects
+                  if (Object.keys(existingData[year][month]).length === 0) {
+                     delete existingData[year][month];
+                  }
+                  if (Object.keys(existingData[year]).length === 0) {
+                     delete existingData[year];
+                  }
+               }
+            }
          }
-         if (!existingData[year][month]) {
-            existingData[year][month] = {};
-         }
-         existingData[year][month][day] = data;
 
          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
       } catch (error) {
@@ -185,27 +216,41 @@ export class MealDataService {
       }
    }
 
-   // Delete meal data for a specific date
-   static async deleteMealData(dateKey: string): Promise<void> {
+   // Delete meal data for specific dates
+   static async deleteMealData(dateKeys: string[]): Promise<void> {
       try {
-         const { year, month, day } = this.parseDateKey(dateKey);
          const existingData = await this.loadAllMealData();
 
-         if (existingData[year]?.[month]?.[day]) {
-            delete existingData[year][month][day];
+         dateKeys.forEach((dateKey) => {
+            const { year, month, day } = this.parseDateKey(dateKey);
+            if (existingData[year]?.[month]?.[day]) {
+               delete existingData[year][month][day];
 
-            // Cleanup empty objects
-            if (Object.keys(existingData[year][month]).length === 0) {
-               delete existingData[year][month];
+               // Cleanup empty objects
+               if (Object.keys(existingData[year][month]).length === 0) {
+                  delete existingData[year][month];
+               }
+               if (Object.keys(existingData[year]).length === 0) {
+                  delete existingData[year];
+               }
             }
-            if (Object.keys(existingData[year]).length === 0) {
-               delete existingData[year];
-            }
-         }
+         });
 
          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
       } catch (error) {
          console.error("Error deleting meal data:", error);
+         throw error;
+      }
+   }
+
+   // Clear all meal data (preserves custom choices)
+   static async clearAllData(): Promise<void> {
+      try {
+         await AsyncStorage.removeItem(STORAGE_KEY);
+         console.log("✅ All meal data cleared from storage");
+         return;
+      } catch (error) {
+         console.error("Error clearing meal data:", error);
          throw error;
       }
    }

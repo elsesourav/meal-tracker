@@ -85,12 +85,6 @@ const Settings = () => {
                         await clearAllData(); // Use the hook function instead of service directly
                         console.log("✅ Complete data clear successful");
 
-                        // Trigger a reload to refresh the month data choices on the main page
-                        if (reloadAllData) {
-                           await reloadAllData();
-                           console.log("✅ Data reloaded after clear");
-                        }
-
                         Alert.alert(
                            "Data Cleared",
                            "All your data has been deleted successfully.",

@@ -217,10 +217,10 @@ const Status = () => {
             </Text>
 
             <InfoCard
-               title="Auto-Save Active"
-               description="Your meal data is automatically saved with 500ms delay after any changes"
-               icon="checkmark-circle"
-               iconColor="#10B981"
+               title="Save-Only Mode"
+               description="Your meal data is saved only when app closes, during imports, or manual saves"
+               icon="save-outline"
+               iconColor="#F59E0B"
             />
 
             <InfoCard
@@ -237,7 +237,6 @@ const Status = () => {
                iconColor="#F59E0B"
             />
          </View>
-         
 
          {/* Performance Info */}
          <View className="mb-8">

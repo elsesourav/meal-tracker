@@ -32,6 +32,7 @@ export default function Index() {
       closeInfoModal,
       handleAlertConfirm,
       handleAlertCancel,
+      saveData,
    } = useMealTracker();
 
    const dates = generateDates();
@@ -39,7 +40,12 @@ export default function Index() {
 
    return (
       <View className="flex-1 bg-base">
-         <Navigation className="pt-10 h-28" onDateChange={handleDateChange} />
+         <Navigation
+            className="pt-10 h-28"
+            onDateChange={handleDateChange}
+            onSettingsPress={saveData}
+            onSaveBeforeDateChange={saveData}
+         />
 
          <TableHeader />
 
