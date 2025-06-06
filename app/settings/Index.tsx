@@ -158,13 +158,11 @@ const Settings = () => {
    );
 
    return (
-      <ScrollView className="flex-1 bg-gray-50 px-4 pt-4">
+      <ScrollView className="flex-1 bg-gray-50 pt-8 px-6">
          {/* Header */}
          <View className="mb-6">
-            <Text className="text-2xl font-bold text-gray-800 mb-2">
-               Settings
-            </Text>
-            <Text className="text-gray-600">
+            <Text className="text-2xl font-bold text-gray-800">Settings</Text>
+            <Text className="text-base text-gray-500 mb-2">
                Manage your meal tracker preferences and data
             </Text>
          </View>

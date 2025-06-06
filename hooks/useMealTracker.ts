@@ -36,6 +36,7 @@ export const useMealTracker = () => {
    );
    const [infoModalVisible, setInfoModalVisible] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
+   const [isClearingData, setIsClearingData] = useState(false); // Flag to prevent auto-save during clear
 
    // Cache for loaded meal data to avoid repeated AsyncStorage calls - MOVED TO TOP
    const [mealDataCache, setMealDataCache] = useState<{ [key: string]: any }>(
@@ -392,7 +393,7 @@ export const useMealTracker = () => {
       }
    };
 
-   // Load saved data when component mounts or month changes - OPTIMIZED VERSION
+
    useEffect(() => {
       const loadSavedData = async () => {
          setIsLoading(true);
@@ -402,6 +403,12 @@ export const useMealTracker = () => {
 
             // Load ALL data into cache at once (much faster than individual calls)
             const allMealData = await MealDataService.loadAllMealData();
+
+
+            console.log("======================\n");
+            console.log(allMealData);
+            console.log("\n======================");
+
             setMealDataCache(allMealData);
             setIsCacheLoaded(true);
             console.log(
@@ -418,6 +425,7 @@ export const useMealTracker = () => {
             const savedChoicesData = await AsyncStorage.getItem(
                "@meal_tracker_custom_values"
             );
+            
             const currentChoices = savedChoicesData
                ? [
                     "--",
@@ -521,46 +529,97 @@ export const useMealTracker = () => {
       };
 
       loadSavedData();
-   }, [currentMonth, generateDates, loadModifyValues]); // Added loadModifyValues dependency
+   }, [currentMonth, generateDates]); // Removed loadModifyValues to prevent infinite loop
 
-   // Auto-save whenever selectedOptions or customValues change
+   // Simplified auto-save - only saves when there are actual values or toggle changes
    useEffect(() => {
       // Don't auto-save during initial loading
       if (isLoading) {
-         console.log("Skipping auto-save: still loading");
+         console.log("Skipping auto-save: still loading data");
+         return;
+      }
+
+      // Enhanced clearing protection - prevent auto-save during clear operation
+      if (isClearingData) {
+         console.log("Skipping auto-save: data clearing in progress");
          return;
       }
 
       // Don't auto-save if there are no options (initial state)
       if (Object.keys(selectedOptions).length === 0) {
-         console.log("Skipping auto-save: no options to save");
+         console.log("Skipping auto-save: no selected options yet");
          return;
       }
 
-      console.log(
-         "Auto-save effect triggered. selectedOptions count:",
-         Object.keys(selectedOptions).length
-      );
+      // Check if there are any actual values worth saving
+      const hasActualValues = Object.keys(selectedOptions).some((key) => {
+         const option = selectedOptions[key];
+         return (
+            option?.value &&
+            option.value !== "--" &&
+            option.value !== "OFF" &&
+            option.value !== ""
+         );
+      });
+
+      // Check if this is a toggle operation (all values are "--" or "OFF")
+      const isToggleOperation =
+         Object.keys(selectedOptions).length > 0 &&
+         Object.keys(selectedOptions).every((key) => {
+            const option = selectedOptions[key];
+            return option?.value === "--" || option?.value === "OFF";
+         });
+
+      // Skip auto-save if no meaningful values and not a toggle operation
+      if (!hasActualValues && !isToggleOperation) {
+         console.log("Skipping auto-save: no meaningful values to save");
+         return;
+      }
+
+      // Additional check to prevent saving during clear operations
+      const allOptionsEmpty = Object.keys(selectedOptions).every((key) => {
+         const option = selectedOptions[key];
+         return (
+            !option?.value || option.value === "--" || option.value === "OFF"
+         );
+      });
+
+      if (allOptionsEmpty) {
+         console.log(
+            "Skipping auto-save: possible clear operation in progress"
+         );
+         return;
+      }
+
+      // Add enhanced debug info about what triggered the auto-save
+      console.log("Auto-save evaluation:", {
+         isLoading,
+         isClearingData,
+         optionsCount: Object.keys(selectedOptions).length,
+         hasActualValues,
+         isToggleOperation,
+         allOptionsEmpty,
+         sampleOptions: Object.keys(selectedOptions)
+            .slice(0, 3)
+            .map((key) => ({
+               key,
+               value: selectedOptions[key]?.value,
+            })),
+      });
 
       const saveChanges = async () => {
-         console.log("Starting auto-save...");
          // Get all unique date keys from selectedOptions
          const dateKeys = new Set<string>();
          Object.keys(selectedOptions).forEach((key) => {
-            console.log("Processing key:", key);
             if (key.includes("-")) {
                const parts = key.split("-");
-               console.log("Key parts:", parts);
                if (parts.length >= 2) {
                   // Key format is like "1/6/2025-night", so we want the first part
                   const baseDateKey = parts[0];
                   dateKeys.add(baseDateKey);
-                  console.log("Added date key:", baseDateKey);
                }
             }
          });
-
-         console.log("Dates to save:", Array.from(dateKeys));
 
          // Save data for each date
          for (const dateKey of dateKeys) {
@@ -570,7 +629,6 @@ export const useMealTracker = () => {
                   selectedOptions,
                   customValues
                );
-               console.log(`Saving data for ${dateKey}:`, mealData);
 
                // Only save if there's actual data (not all zeros)
                if (
@@ -579,11 +637,11 @@ export const useMealTracker = () => {
                   mealData.extra > 0
                ) {
                   await MealDataService.saveMealData(dateKey, mealData);
-                  console.log(`Saved data for ${dateKey}`);
+                  console.log(`✅ Saved data for ${dateKey}:`, mealData);
                } else {
                   // If all values are zero, delete the entry
                   await MealDataService.deleteMealData(dateKey);
-                  console.log(`Deleted empty data for ${dateKey}`);
+                  console.log(`🗑️ Deleted empty data for ${dateKey}`);
                }
             } catch (error) {
                console.error("Auto-save failed for date", dateKey, ":", error);
@@ -601,13 +659,13 @@ export const useMealTracker = () => {
             }
          }
 
-         console.log("Auto-save completed");
+         console.log("✅ Auto-save completed");
       };
 
-      // Debounce the save operation
-      const timeoutId = setTimeout(saveChanges, 500); // Reduced from 2000 to 500ms
+      // Use immediate save for toggle operations, debounced save for value changes
+      const debounceTime = isToggleOperation ? 100 : 1000; // 100ms for toggles, 1s for values
+      const timeoutId = setTimeout(saveChanges, debounceTime);
       return () => {
-         console.log("Auto-save timeout cleared");
          clearTimeout(timeoutId);
       };
    }, [
@@ -615,7 +673,7 @@ export const useMealTracker = () => {
       customValues,
       isLoading,
       isCacheLoaded,
-      setMealDataCache,
+      isClearingData,
    ]);
 
    // Refresh cache after data changes
@@ -840,43 +898,58 @@ export const useMealTracker = () => {
       try {
          console.log("🧹 Starting complete data clear process...");
 
-         // 1. First clear AsyncStorage (only meal data, preserve custom choices)
+         // IMPORTANT: Set clearing flag FIRST to prevent auto-save from interfering
+         setIsClearingData(true);
+         console.log("🚫 Auto-save disabled during clear operation");
+
+         // Add a delay to ensure clearing flag is processed before state changes
+         await new Promise((resolve) => setTimeout(resolve, 150));
+
+         // 1. Clear AsyncStorage (only meal data, preserve custom choices)
          await MealDataService.clearAllData();
          console.log("✅ AsyncStorage meal data cleared");
 
-         // 2. Then clear all in-memory state (except custom choices which are preserved)
+         // 2. Clear all in-memory state (except custom choices)
          console.log("🧹 Clearing in-memory state...");
 
-         // Reset selected options to empty
-         setSelectedOptions({});
+         // Batch state updates together
+         const batchStateUpdates = async () => {
+            // Reset selected options to empty
+            setSelectedOptions({});
+            // Reset custom values to empty
+            setCustomValues({});
+            // Reset dropdown states
+            setDropdownStates({});
+            // Clear cache state
+            setMealDataCache({});
+            setIsCacheLoaded(false);
+         };
 
-         // Reset custom values to empty
-         setCustomValues({});
+         await batchStateUpdates();
 
-         // Reset dropdown states
-         setDropdownStates({});
+         // Wait for state batch to process
+         await new Promise((resolve) => setTimeout(resolve, 150));
 
-         // DO NOT reset custom choices - these are user's dropdown options and should be preserved
-         // setCustomChoices(["--", "50", "100", "OFF", "Custom"]); // REMOVED
-
-         // Reload custom choices from AsyncStorage (they should still be there)
+         // Reload custom choices from AsyncStorage (preserve these)
          await loadModifyValues();
-
-         // Clear cache state
-         setMealDataCache({});
-         setIsCacheLoaded(false);
+         console.log("✅ Custom choices reloaded");
 
          // Reset loading state
          setIsLoading(false);
+         console.log("✅ In-memory state cleared (custom choices preserved)");
 
-         console.log(
-            "✅ In-memory meal data cleared (custom choices preserved)"
-         );
-         console.log("🎉 Complete meal data clear successful!");
+         // Keep auto-save disabled for a bit longer to ensure all state updates are processed
+         await new Promise((resolve) => setTimeout(resolve, 300));
+
+         // Re-enable auto-save
+         setIsClearingData(false);
+         console.log("✅ Auto-save re-enabled after clear operation");
 
          return true;
       } catch (error) {
          console.error("❌ Error during complete data clear:", error);
+         // Re-enable auto-save even if there was an error
+         setIsClearingData(false);
          throw error;
       }
    }, [loadModifyValues]);
