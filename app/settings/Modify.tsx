@@ -157,7 +157,7 @@ const Modify = () => {
    };
 
    return (
-      <View className="flex-1 bg-gray-50 pt-8 px-6">
+      <View className="flex-1 bg-gray-50 pt-10 px-6">
          {/* Header */}
          <View className="mb-6">
             <Text className="text-2xl font-bold text-gray-800">

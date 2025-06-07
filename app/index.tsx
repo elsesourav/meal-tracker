@@ -1,11 +1,11 @@
 import React from "react";
-import { View } from "react-native";
 import CustomAlert from "../components/CustomAlert";
 import MealTable from "../components/MealTable";
 import Navigation from "../components/Navigation";
 import SummaryDetailsModal from "../components/SummaryDetailsModal";
 import SummarySection from "../components/SummarySection";
 import TableHeader from "../components/TableHeader";
+import ThemedView from "../components/ThemedView";
 import { useMealTracker } from "../hooks/useMealTracker";
 
 export default function Index() {
@@ -39,7 +39,7 @@ export default function Index() {
    const summary = calculateSummary(dates);
 
    return (
-      <View className="flex-1 bg-base">
+      <ThemedView className="flex-1 bg-white dark:bg-gray-900">
          <Navigation
             className="pt-10 h-28"
             currentDate={currentMonth}
@@ -87,6 +87,6 @@ export default function Index() {
             summary={summary}
             datesLength={dates.length}
          />
-      </View>
+      </ThemedView>
    );
 }

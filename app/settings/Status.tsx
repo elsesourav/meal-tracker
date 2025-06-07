@@ -107,7 +107,7 @@ const Status = () => {
    );
 
    return (
-      <ScrollView className="flex-1 bg-gray-50 pt-8 px-6">
+      <ScrollView className="flex-1 bg-gray-50 pt-10 px-6">
          {/* Header */}
          <View className="mb-4">
             <Text className="text-2xl font-bold text-gray-800">

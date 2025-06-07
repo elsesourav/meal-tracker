@@ -129,20 +129,26 @@ const MealRow: React.FC<MealRowProps> = ({
 
    return (
       <View
-         className={`flex-row py-2 mx-1 mb-2 rounded-md border-b border-gray-300 ${
-            hasNumericValue() ? "bg-green-200/20" : "bg-blue-500/5"
+         className={`flex-row py-2 mx-1 mb-2 rounded-md border-b border-gray-300 dark:border-gray-600 ${
+            hasNumericValue()
+               ? "bg-green-200/20 dark:bg-green-800/20"
+               : "bg-blue-500/5 dark:bg-blue-800/10"
          }`}
       >
          {/* Date Column - flex-4 */}
          <View className="w-full flex flex-[4] justify-center items-center">
-            <Text className="text-sm font-medium text-gray-800 z-20">
+            <Text className="text-sm font-medium text-gray-800 dark:text-white z-20">
                {dateInfo.date}
             </Text>
-            <Text className="text-xs text-gray-500 z-20">{dateInfo.day}</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400 z-20">
+               {dateInfo.day}
+            </Text>
             {/* Date background icon */}
             <View
                className={`absolute w-8 h-9 rounded-lg z-10 ${
-                  isCurrentDate ? "bg-orange-200/90" : "bg-blue-200/90"
+                  isCurrentDate
+                     ? "bg-orange-200/90 dark:bg-orange-700/60"
+                     : "bg-blue-200/90 dark:bg-blue-700/60"
                }`}
             />
          </View>
@@ -166,11 +172,31 @@ const MealRow: React.FC<MealRowProps> = ({
          <View className="w-full flex-[6] flex justify-center items-center">
             <TouchableOpacity
                onPress={() => onToggle(dateKey)}
-               className={`rounded-xl px-3 py-2 ${
-                  statusIsOn ? "bg-orange-500" : "bg-emerald-400"
+               className={`rounded-full px-4 py-3 active:scale-95 ${
+                  statusIsOn
+                     ? "bg-red-500/20 dark:bg-red-600/20"
+                     : "bg-emerald-500/20 dark:bg-emerald-600/20"
                }`}
+               style={{
+                  shadowColor: statusIsOn ? "#ef4444" : "#10b981",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 1,
+                  shadowRadius: 4,
+                  elevation: 3,
+               }}
             >
-               <Ionicons name="power-outline" size={12} color="white" />
+               <View
+                  className={`absolute inset-0 border-2 rounded-full ${
+                     statusIsOn ? "border-red-500/20" : "border-emerald-500/30"
+                  }`}
+               />
+
+               <Ionicons
+                  className="rounded-full"
+                  name={statusIsOn ? "power" : "power-outline"}
+                  size={14}
+                  color="white"
+               />
             </TouchableOpacity>
          </View>
       </View>

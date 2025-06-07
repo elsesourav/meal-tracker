@@ -1,9 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import * as Updates from "expo-updates";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import CustomAlert from "../../components/CustomAlert";
+import NotificationSettingsModal from "../../components/NotificationSettingsModal";
+import ThemePopup from "../../components/ThemePopup";
+import ThemedView from "../../components/ThemedView";
 import {
    ALERT_MESSAGES,
    APP_INFO,
@@ -12,6 +15,7 @@ import {
 } from "../../constants/alertMessages";
 import { useMealTracker } from "../../hooks/useMealTracker";
 import { MealDataService } from "../../services/MealDataService";
+import { NotificationService } from "../../services/NotificationService";
 
 interface AlertState {
    visible: boolean;
@@ -23,6 +27,9 @@ interface AlertState {
 
 const Settings = () => {
    const { exportData, importData, clearAllData } = useMealTracker();
+   const [notificationModalVisible, setNotificationModalVisible] =
+      useState(false);
+   const [themePopupVisible, setThemePopupVisible] = useState(false);
 
    const [alert, setAlert] = useState<AlertState>({
       visible: false,
@@ -30,6 +37,11 @@ const Settings = () => {
       message: "",
       type: "info",
    });
+
+   useEffect(() => {
+      // Initialize notification service when component mounts
+      NotificationService.scheduleNotifications();
+   }, []);
 
    const showAlert = (
       title: string,
@@ -168,6 +180,16 @@ const Settings = () => {
       showAlert(APP_INFO.ABOUT.TITLE, APP_INFO.ABOUT.DESCRIPTION, "info");
    };
 
+   const handleNotificationSettings = () => {
+      setNotificationModalVisible(true);
+   };
+
+   const closeNotificationModal = () => {
+      setNotificationModalVisible(false);
+      // Reschedule notifications after settings change
+      NotificationService.scheduleNotifications();
+   };
+
    const SettingsCard = ({
       title,
       subtitle,
@@ -185,18 +207,20 @@ const Settings = () => {
    }) => (
       <TouchableOpacity
          onPress={onPress}
-         className="bg-white rounded-lg p-4 mb-3 border border-gray-200 shadow-sm"
+         className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3 border border-gray-200 dark:border-gray-700 shadow-sm"
       >
          <View className="flex-row items-center">
-            <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3">
+            <View className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center mr-3">
                <Ionicons name={icon} size={20} color={iconColor} />
             </View>
             <View className="flex-1">
-               <Text className="text-lg font-semibold text-gray-800">
+               <Text className="text-lg font-semibold text-gray-800 dark:text-white">
                   {title}
                </Text>
                {subtitle && (
-                  <Text className="text-sm text-gray-500 mt-1">{subtitle}</Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                     {subtitle}
+                  </Text>
                )}
             </View>
             {showArrow && (
@@ -207,21 +231,21 @@ const Settings = () => {
    );
 
    return (
-      <>
-         <ScrollView className="flex-1 bg-gray-50 pt-8 px-6">
+      <ThemedView className="relative size-full">
+         <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900 pt-10 px-6">
             {/* Header */}
             <View className="mb-6">
-               <Text className="text-2xl font-bold text-gray-800">
+               <Text className="text-2xl font-bold text-gray-800 dark:text-white">
                   Settings
                </Text>
-               <Text className="text-base text-gray-500">
+               <Text className="text-base text-gray-500 dark:text-gray-400">
                   {SETTINGS_SECTIONS.DATA_MANAGEMENT.subtitle}
                </Text>
             </View>
 
             {/* Preferences Section */}
             <View className="mb-6">
-               <Text className="text-lg font-semibold text-gray-800 mb-3">
+               <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
                   Preferences
                </Text>
 
@@ -229,7 +253,7 @@ const Settings = () => {
                   title="Notifications"
                   subtitle="Configure meal reminders and alerts"
                   icon="notifications-outline"
-                  onPress={() => {}}
+                  onPress={handleNotificationSettings}
                   iconColor="#FF6B35"
                />
 
@@ -237,14 +261,14 @@ const Settings = () => {
                   title="Theme"
                   subtitle="Choose your preferred app appearance"
                   icon="color-palette-outline"
-                  onPress={() => {}}
+                  onPress={() => setThemePopupVisible(true)}
                   iconColor="#8B5CF6"
                />
             </View>
 
             {/* Contact Section */}
             <View className="mb-6">
-               <Text className="text-lg font-semibold text-gray-800 mb-3">
+               <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
                   {SETTINGS_SECTIONS.CONTACT.title}
                </Text>
 
@@ -267,7 +291,7 @@ const Settings = () => {
 
             {/* Data Management Section */}
             <View className="mb-6">
-               <Text className="text-lg font-semibold text-gray-800 mb-3">
+               <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
                   {SETTINGS_SECTIONS.DATA_MANAGEMENT.title}
                </Text>
 
@@ -378,7 +402,17 @@ const Settings = () => {
                   : undefined
             }
          />
-      </>
+
+         <NotificationSettingsModal
+            visible={notificationModalVisible}
+            onClose={closeNotificationModal}
+         />
+
+         <ThemePopup
+            visible={themePopupVisible}
+            onClose={() => setThemePopupVisible(false)}
+         />
+      </ThemedView>
    );
 };
 

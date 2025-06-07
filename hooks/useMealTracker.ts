@@ -3,6 +3,7 @@ import * as Updates from "expo-updates";
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { MealDataService } from "../services/MealDataService";
+import { NotificationService } from "../services/NotificationService";
 import { AsyncStorageHelper } from "../utils/AsyncStorageUtils";
 
 interface MealOption {
@@ -393,6 +394,9 @@ export const useMealTracker = () => {
             customValues
          );
          console.log("✅ Data saved successfully");
+
+         // Check if today's data has been filled and cancel notifications if needed
+         await NotificationService.checkTodayDataAndCancelIfNeeded();
       } catch (error) {
          console.error("❌ Save failed:", error);
       }

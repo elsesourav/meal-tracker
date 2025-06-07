@@ -48,7 +48,7 @@ const Footer: React.FC<FooterProps> = ({ className = "" }) => {
    };
 
    return (
-      <View className={`flex-row h-24 bg-background py-2 ${className}`}>
+      <View className={`relative flex-row h-24 bg-background py-2 ${className}`}>
          <View className="flex-row items-center w-full justify-center">
             {/* Custom Month */}
             <View className="flex justify-center items-center w-20">

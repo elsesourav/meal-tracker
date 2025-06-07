@@ -22,7 +22,10 @@
          "edgeToEdgeEnabled": true,
          "permissions": [
             "android.permission.WRITE_EXTERNAL_STORAGE",
-            "android.permission.READ_EXTERNAL_STORAGE"
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.POST_NOTIFICATIONS",
+            "android.permission.RECEIVE_BOOT_COMPLETED",
+            "android.permission.WAKE_LOCK"
          ]
       },
       "web": {
@@ -40,10 +43,25 @@
                "resizeMode": "contain",
                "backgroundColor": "#ffffff"
             }
+         ],
+         [
+            "expo-notifications",
+            {
+               "icon": "./assets/images/icon.png",
+               "color": "#ffffff",
+               "sounds": ["./assets/sounds/notification.wav"]
+            }
          ]
       ],
       "experiments": {
          "typedRoutes": true
-      }
+      },
+      "extra": {
+         "router": {},
+         "eas": {
+            "projectId": "a7ef000c-c5d5-4435-a653-bb777a9a7ca6"
+         }
+      },
+      "owner": "elsesourav"
    }
 }

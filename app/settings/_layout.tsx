@@ -48,19 +48,6 @@ const _layout = () => {
          }}
       >
          <Tabs.Screen
-            name="Index"
-            options={{
-               tabBarIcon: ({ color, focused }) => (
-                  <TabItem
-                     icon="settings-outline"
-                     label="Settings"
-                     color={color}
-                     focused={focused}
-                  />
-               ),
-            }}
-         />
-         <Tabs.Screen
             name="Status"
             options={{
                tabBarIcon: ({ color, focused }) => (
@@ -80,6 +67,19 @@ const _layout = () => {
                   <TabItem
                      icon="create-outline"
                      label="Modify"
+                     color={color}
+                     focused={focused}
+                  />
+               ),
+            }}
+         />
+         <Tabs.Screen
+            name="Index"
+            options={{
+               tabBarIcon: ({ color, focused }) => (
+                  <TabItem
+                     icon="settings-outline"
+                     label="Settings"
                      color={color}
                      focused={focused}
                   />
