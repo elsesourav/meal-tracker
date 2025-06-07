@@ -11,13 +11,15 @@
       "ios": {
          "supportsTablet": true,
          "infoPlist": {
-            "NSPhotoLibraryAddUsageDescription": "This app needs access to photo library to save exported meal tracker data files."
+            "NSPhotoLibraryAddUsageDescription": "This app needs access to photo library to save exported meal tracker data files.",
+            "UIBackgroundModes": ["background-fetch", "remote-notification"]
          }
       },
       "android": {
+         "package": "com.elsesourav.mealtracker",
          "adaptiveIcon": {
-            "foregroundImage": "./assets/images/adaptive-icon.png",
-            "backgroundColor": "#ffffff"
+            "foregroundImage": "./assets/images/icon.png",
+            "backgroundColor": "#FFFFFF"
          },
          "edgeToEdgeEnabled": true,
          "permissions": [
@@ -25,20 +27,21 @@
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.POST_NOTIFICATIONS",
             "android.permission.RECEIVE_BOOT_COMPLETED",
-            "android.permission.WAKE_LOCK"
+            "android.permission.WAKE_LOCK",
+            "android.permission.SET_ALARM"
          ]
       },
       "web": {
          "bundler": "metro",
          "output": "static",
-         "favicon": "./assets/images/favicon.png"
+         "favicon": "./assets/images/icon.png"
       },
       "plugins": [
          "expo-router",
          [
             "expo-splash-screen",
             {
-               "image": "./assets/images/splash-icon.png",
+               "image": "./assets/images/icon.png",
                "imageWidth": 200,
                "resizeMode": "contain",
                "backgroundColor": "#ffffff"
@@ -49,9 +52,16 @@
             {
                "icon": "./assets/images/icon.png",
                "color": "#ffffff",
-               "sounds": ["./assets/sounds/notification.wav"]
+               "enableBackgroundRemoteNotifications": true
             }
-         ]
+         ],
+         [
+            "expo-background-fetch",
+            {
+               "backgroundFetchIntervalMs": 60000
+            }
+         ],
+         ["expo-task-manager"]
       ],
       "experiments": {
          "typedRoutes": true

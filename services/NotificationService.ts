@@ -1,12 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
+import { Platform } from "react-native";
 import { MealDataService } from "./MealDataService";
 
 const NOTIFICATION_TASK = "MEAL_REMINDER_TASK";
+const BACKGROUND_FETCH_TASK = "BACKGROUND_MEAL_CHECK";
 const NOTIFICATION_SETTINGS_KEY = "@notification_settings";
 
-// Configure notification behavior
+// Configure notification behavior for when app is in foreground
 Notifications.setNotificationHandler({
    handleNotification: async () => ({
       shouldShowAlert: true,
@@ -27,19 +31,143 @@ interface NotificationSettings {
    selectedAfterMidnight: string;
 }
 
+// Define background tasks at module level
+TaskManager.defineTask(
+   NOTIFICATION_TASK,
+   async ({ data, error, executionInfo }) => {
+      try {
+         console.log("Background notification task executing...");
+         if (error) {
+            console.error("Notification task error:", error);
+            return;
+         }
+
+         // Handle background notification
+         await NotificationService.checkAndSendNotification();
+         return { success: true };
+      } catch (error) {
+         console.error("Background notification task failed:", error);
+         return { success: false };
+      }
+   }
+);
+
+TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+   try {
+      console.log("Background fetch task executing...");
+      await NotificationService.checkAndSendNotification();
+      return BackgroundFetch.BackgroundFetchResult.NewData;
+   } catch (error) {
+      console.error("Background fetch task failed:", error);
+      return BackgroundFetch.BackgroundFetchResult.Failed;
+   }
+});
+
 export class NotificationService {
+   static async initialize(): Promise<void> {
+      try {
+         // Request permissions first
+         const hasPermission = await this.requestPermissions();
+         if (!hasPermission) {
+            console.log("Notification permissions not granted");
+            return;
+         }
+
+         // Set up notification channels for Android
+         if (Platform.OS === "android") {
+            await this.setupAndroidChannels();
+         }
+
+         // Register background tasks
+         await this.registerBackgroundTasks();
+
+         // Schedule initial notifications
+         await this.scheduleNotifications();
+
+         console.log("NotificationService initialized successfully");
+      } catch (error) {
+         console.error("Failed to initialize NotificationService:", error);
+      }
+   }
+
+   static async setupAndroidChannels(): Promise<void> {
+      try {
+         await Notifications.setNotificationChannelAsync("meal-reminders", {
+            name: "Meal Reminders",
+            importance: Notifications.AndroidImportance.HIGH,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: "#2563EB",
+            sound: "default",
+         });
+
+         await Notifications.setNotificationChannelAsync("meal-alerts", {
+            name: "Meal Alerts",
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 500, 250, 500],
+            lightColor: "#DC2626",
+            sound: "default",
+         });
+      } catch (error) {
+         console.error("Failed to setup Android channels:", error);
+      }
+   }
+
+   static async registerBackgroundTasks(): Promise<void> {
+      try {
+         // Register background fetch task
+         const isBackgroundFetchAvailable =
+            await BackgroundFetch.getStatusAsync();
+         if (
+            isBackgroundFetchAvailable ===
+            BackgroundFetch.BackgroundFetchStatus.Available
+         ) {
+            await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+               minimumInterval: 15 * 60 * 1000, // 15 minutes minimum
+               stopOnTerminate: false,
+               startOnBoot: true,
+            });
+            console.log("Background fetch registered");
+         }
+
+         // Register notification task
+         if (await TaskManager.isTaskRegisteredAsync(NOTIFICATION_TASK)) {
+            await TaskManager.unregisterTaskAsync(NOTIFICATION_TASK);
+         }
+         await Notifications.registerTaskAsync(NOTIFICATION_TASK);
+         console.log("Notification task registered");
+      } catch (error) {
+         console.error("Failed to register background tasks:", error);
+      }
+   }
+
    static async requestPermissions(): Promise<boolean> {
       try {
+         if (!Device.isDevice) {
+            console.log("Must use physical device for Push Notifications");
+            return false;
+         }
+
          const { status: existingStatus } =
             await Notifications.getPermissionsAsync();
          let finalStatus = existingStatus;
 
          if (existingStatus !== "granted") {
-            const { status } = await Notifications.requestPermissionsAsync();
+            const { status } = await Notifications.requestPermissionsAsync({
+               ios: {
+                  allowAlert: true,
+                  allowBadge: true,
+                  allowSound: true,
+               },
+            });
             finalStatus = status;
          }
 
-         return finalStatus === "granted";
+         if (finalStatus !== "granted") {
+            console.log("Notification permission denied");
+            return false;
+         }
+
+         return true;
       } catch (error) {
          console.error("Error requesting notification permissions:", error);
          return false;
@@ -145,14 +273,21 @@ export class NotificationService {
 
          const mealData = await MealDataService.loadMealData(yesterdayKey);
 
-         // If no data exists for yesterday, or all fields are empty/zero
+         // Don't notify if:
+         // 1. No data exists AND neither day nor night are explicitly set to "OFF"
+         // 2. Day or night meals are explicitly turned "OFF" (value -1)
+         // 3. All fields have positive values (user has logged data)
          const shouldNotify =
             !mealData ||
             (mealData.day === 0 &&
                mealData.night === 0 &&
                mealData.extra === 0);
 
-         if (shouldNotify) {
+         // Don't send notification if day or night meals are explicitly set to "OFF"
+         const dayIsOff = mealData && mealData.day === -1;
+         const nightIsOff = mealData && mealData.night === -1;
+
+         if (shouldNotify && !dayIsOff && !nightIsOff) {
             await Notifications.presentNotificationAsync({
                title: "Missing Meal Data",
                body: `You haven't logged your meal data for ${yesterdayKey}. Please update it now.`,
@@ -192,20 +327,24 @@ export class NotificationService {
          const today = new Date().toISOString().split("T")[0];
          const mealData = await MealDataService.loadMealData(today);
 
-         // If today has any data filled, we can assume user is active
-         if (
-            mealData &&
-            (mealData.day > 0 || mealData.night > 0 || mealData.extra > 0)
-         ) {
-            // Cancel notifications for today only if user has logged data
+         // Cancel notifications if:
+         // 1. Today has any positive data filled (user is active)
+         // 2. Day or night meals are explicitly set to "OFF"
+         const hasData = mealData && 
+            (mealData.day > 0 || mealData.night > 0 || mealData.extra > 0);
+         const dayIsOff = mealData && mealData.day === -1;
+         const nightIsOff = mealData && mealData.night === -1;
+
+         if (hasData || dayIsOff || nightIsOff) {
+            // Cancel notifications for today only if user has logged data or set meals to "OFF"
             const scheduledNotifications =
                await Notifications.getAllScheduledNotificationsAsync();
 
             for (const notification of scheduledNotifications) {
                const triggerDate = new Date(notification.trigger as any);
-               const today = new Date();
+               const todayDate = new Date();
 
-               if (triggerDate.toDateString() === today.toDateString()) {
+               if (triggerDate.toDateString() === todayDate.toDateString()) {
                   await Notifications.cancelScheduledNotificationAsync(
                      notification.identifier
                   );
@@ -217,16 +356,5 @@ export class NotificationService {
       }
    }
 }
-
-// Background task for periodic checks (if needed)
-TaskManager.defineTask(NOTIFICATION_TASK, async () => {
-   try {
-      await NotificationService.checkAndSendNotification();
-      return { success: true };
-   } catch (error) {
-      console.error("Background notification task failed:", error);
-      return { success: false };
-   }
-});
 
 export default NotificationService;

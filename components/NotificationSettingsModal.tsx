@@ -260,7 +260,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
             </ScrollView>
 
             {/* Footer */}
-            <View className="bg-white border-t border-gray-200 p-6">
+            <View className="bg-white dark:bg-gray-800 border-t border-gray-200 p-6">
                <TouchableOpacity
                   onPress={onClose}
                   className="bg-blue-500 rounded-lg py-3 px-6"

@@ -111,29 +111,39 @@ export class MealDataService {
                extra = 0;
 
             // Process day value
+            let dayIsOff = false;
             if (
                daySelected?.value &&
-               daySelected.value !== "--" &&
-               daySelected.value !== "OFF"
+               daySelected.value !== "--"
             ) {
-               const value =
-                  daySelected.value === "Custom"
-                     ? parseInt(customValues[dayKey] || "0")
-                     : parseInt(daySelected.value || "0");
-               if (!isNaN(value)) day = value;
+               if (daySelected.value === "OFF") {
+                  dayIsOff = true;
+                  day = -1; // Use -1 to represent "OFF" state
+               } else {
+                  const value =
+                     daySelected.value === "Custom"
+                        ? parseInt(customValues[dayKey] || "0")
+                        : parseInt(daySelected.value || "0");
+                  if (!isNaN(value)) day = value;
+               }
             }
 
             // Process night value
+            let nightIsOff = false;
             if (
                nightSelected?.value &&
-               nightSelected.value !== "--" &&
-               nightSelected.value !== "OFF"
+               nightSelected.value !== "--"
             ) {
-               const value =
-                  nightSelected.value === "Custom"
-                     ? parseInt(customValues[nightKey] || "0")
-                     : parseInt(nightSelected.value || "0");
-               if (!isNaN(value)) night = value;
+               if (nightSelected.value === "OFF") {
+                  nightIsOff = true;
+                  night = -1; // Use -1 to represent "OFF" state
+               } else {
+                  const value =
+                     nightSelected.value === "Custom"
+                        ? parseInt(customValues[nightKey] || "0")
+                        : parseInt(nightSelected.value || "0");
+                  if (!isNaN(value)) night = value;
+               }
             }
 
             // Process custom/extra value
@@ -152,13 +162,14 @@ export class MealDataService {
             // Save or delete based on whether there's any data
             const { year, month, day: dayNum } = this.parseDateKey(dateKey);
 
-            if (day > 0 || night > 0 || extra > 0) {
+            // Save if any value > 0 OR if day/night are explicitly set to "OFF"
+            if (day > 0 || night > 0 || extra > 0 || dayIsOff || nightIsOff) {
                // Save data
                if (!existingData[year]) existingData[year] = {};
                if (!existingData[year][month]) existingData[year][month] = {};
                existingData[year][month][dayNum] = { day, night, extra };
             } else {
-               // Remove data if all values are zero
+               // Remove data if all values are zero and no "OFF" states
                if (existingData[year]?.[month]?.[dayNum]) {
                   delete existingData[year][month][dayNum];
 

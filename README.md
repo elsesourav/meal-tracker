@@ -1,50 +1,201 @@
-# Welcome to your Expo app 👋
+# 🍽️ Meal Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A comprehensive React Native mobile application built with Expo for tracking daily meal consumption and managing meal reminders.
 
-## Get started
+## 📱 Features
 
-1. Install dependencies
+### Core Functionality
+
+-  **Daily Meal Tracking**: Track day meals, night meals, and extra meals
+-  **Calendar View**: Navigate through dates to view/edit meal data
+-  **Data Export**: Export meal data as JSON files
+-  **Data Import**: Import previously exported meal data
+-  **Summary Statistics**: View meal consumption summaries and analytics
+
+### Smart Notifications
+
+-  **Background Notifications**: Receive reminders even when app is closed
+-  **Customizable Reminders**: Set before-midnight and after-midnight reminder times
+-  **Smart Scheduling**: Notifications automatically adapt based on your meal logging behavior
+-  **Cross-Platform Support**: Works on both Android and iOS
+
+### User Experience
+
+-  **Dark/Light Theme**: Toggle between light and dark modes
+-  **Responsive Design**: Beautiful UI that works across different screen sizes
+-  **Smooth Animations**: Fluid transitions and interactions
+-  **Offline Support**: Works without internet connection
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+-  Node.js (16 or later)
+-  npm or yarn
+-  Expo CLI
+-  Android Studio (for Android development)
+-  Xcode (for iOS development)
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/elsesourav/meal-tracker.git
+   cd meal-tracker
+   ```
+
+2. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. **Start the development server**
 
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Run on device/simulator**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   # Android
+   npm run android
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   # iOS
+   npm run ios
 
-## Get a fresh project
+   # Web
+   npm run web
+   ```
 
-When you're ready, run:
+### Building for Production
+
+#### Android APK
 
 ```bash
-npm run reset-project
+npm run build:android
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+#### Production Build
 
-## Learn more
+```bash
+npm run build:android:production
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🏗️ Technology Stack
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+-  **Framework**: React Native with Expo
+-  **Navigation**: Expo Router
+-  **State Management**: React Hooks & Context API
+-  **Storage**: AsyncStorage
+-  **Notifications**: Expo Notifications with Background Tasks
+-  **Styling**: NativeWind (Tailwind CSS for React Native)
+-  **TypeScript**: Full TypeScript support
+-  **Build System**: EAS Build
 
-## Join the community
+## 📂 Project Structure
 
-Join our community of developers creating universal apps.
+```
+meal-tracker/
+├── app/                          # App routes and screens
+│   ├── _layout.tsx              # Root layout with navigation setup
+│   ├── index.tsx                # Main meal tracking screen
+│   └── settings/                # Settings screens
+├── components/                   # Reusable UI components
+│   ├── MealTable.tsx            # Main meal tracking table
+│   ├── NotificationSettingsModal.tsx
+│   └── ...
+├── services/                     # Business logic services
+│   ├── MealDataService.ts       # Meal data management
+│   └── NotificationService.ts   # Background notifications
+├── contexts/                     # React contexts
+├── hooks/                        # Custom React hooks
+├── utils/                        # Utility functions
+└── assets/                       # Images, fonts, sounds
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🔧 Key Components
+
+### MealDataService
+
+Handles all meal data operations including:
+
+-  CRUD operations for meal data
+-  Data export/import functionality
+-  Date-based data retrieval
+
+### NotificationService
+
+Manages background notifications with:
+
+-  Background task registration
+-  Smart notification scheduling
+-  Platform-specific optimizations
+-  Permission handling
+
+### Theme System
+
+-  Light/Dark theme support
+-  System theme detection
+-  Persistent theme preferences
+
+## 🔔 Notification Features
+
+The app includes sophisticated background notification support:
+
+-  **Background Tasks**: Notifications work even when app is closed
+-  **Smart Scheduling**: Reminders adapt to your usage patterns
+-  **Customizable Times**: Set your preferred reminder times
+-  **Cross-Platform**: Optimized for both Android and iOS
+
+## 📊 Data Management
+
+-  **Local Storage**: All data stored locally on device
+-  **Export/Import**: JSON-based data portability
+-  **Date-based Organization**: Easy navigation through historical data
+-  **Data Validation**: Robust error handling and data integrity
+
+## 🛠️ Development
+
+### Available Scripts
+
+-  `npm start` - Start Expo development server
+-  `npm run android` - Run on Android device/emulator
+-  `npm run ios` - Run on iOS device/simulator
+-  `npm run web` - Run in web browser
+-  `npm run lint` - Run ESLint
+-  `npm run build:android` - Build Android APK
+
+### Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+**elsesourav**
+
+-  GitHub: [@elsesourav](https://github.com/elsesourav)
+
+## 🙏 Acknowledgments
+
+-  Built with React Native and Expo
+-  Uses various open-source libraries and tools
+-  Inspired by the need for simple meal tracking
+
+## 📞 Support
+
+If you have any questions or need help, please open an issue on GitHub.
+
+---
+
+**© 2025 elsesourav. All rights reserved.**

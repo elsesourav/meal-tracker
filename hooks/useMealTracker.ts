@@ -85,11 +85,11 @@ export const useMealTracker = () => {
             );
             setCustomChoices(["--", ...sortedValues, "OFF", "Custom"]);
          } else {
-            setCustomChoices(["--", "50", "100", "OFF", "Custom"]);
+            setCustomChoices(["--", "40", "60", "90", "OFF", "Custom"]);
          }
       } catch (error) {
          console.error("Error loading modify values:", error);
-         setCustomChoices(["--", "40", "OFF", "Custom"]);
+         setCustomChoices(["--", "40", "60", "90", "OFF", "Custom"]);
       }
    }, []);
 
