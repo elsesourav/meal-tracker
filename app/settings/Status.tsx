@@ -50,18 +50,20 @@ const Status = () => {
       value,
       color = "#3B82F6",
       isCurrentMonth = false,
+      className = "",
    }: {
       label: string;
       value: number;
       color?: string;
       isCurrentMonth?: boolean;
+      className?: string;
    }) => (
       <View
          className={`rounded-lg p-4 border shadow-sm ${
             isCurrentMonth
                ? "bg-blue-50 border-blue-200"
                : "bg-white border-gray-200"
-         }`}
+         } ${className}`}
       >
          <Text
             className={`text-sm mb-1 ${
@@ -73,6 +75,10 @@ const Status = () => {
          <Text className={`text-2xl font-bold`} style={{ color }}>
             {label.includes("Total") && label !== "Total Days"
                ? `₹${value}`
+               : label.includes("%")
+               ? `${value}%`
+               : label.includes("Avg")
+               ? value
                : value}
          </Text>
       </View>
@@ -210,53 +216,192 @@ const Status = () => {
             </View>
          </View>
 
-         {/* App Status */}
+         {/* Average Statistics */}
          <View className="mb-6">
             <Text className="text-lg font-semibold text-gray-800 mb-3">
-               App Status
+               Average Statistics
             </Text>
 
-            <InfoCard
-               title="Save-Only Mode"
-               description="Your meal data is saved only when app closes, during imports, or manual saves"
-               icon="save-outline"
-               iconColor="#F59E0B"
-            />
+            {/* Primary Average - Full width highlight card */}
+            <View className="mb-3">
+               <View className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-full p-4 border border-green-200 shadow-sm">
+                  <View className="flex-row items-center justify-between">
+                     <View className="flex-row items-center">
+                        <View className="w-10 h-10 rounded-full bg-green-100 items-center justify-center mr-3">
+                           <Ionicons
+                              name="restaurant"
+                              size={20}
+                              color="#10B981"
+                           />
+                        </View>
+                        <View>
+                           <Text className="text-sm text-green-600 font-medium">
+                              Average Meals Per Day
+                           </Text>
+                           <Text className="text-xs text-green-500">
+                              Overall daily consumption
+                           </Text>
+                        </View>
+                     </View>
+                     <Text className="text-3xl font-bold text-green-600">
+                        {statistics.totalDays > 0
+                           ? (
+                                statistics.totalAmount / statistics.totalDays
+                             ).toFixed(1)
+                           : "0.0"}
+                     </Text>
+                  </View>
+               </View>
+            </View>
 
-            <InfoCard
-               title="Data Persistence"
-               description="All data is stored locally using AsyncStorage in JSON format"
-               icon="server"
-               iconColor="#3B82F6"
-            />
-
-            <InfoCard
-               title="Background Save"
-               description="Data is automatically saved when app goes to background"
-               icon="save"
-               iconColor="#F59E0B"
-            />
+            {/* Detailed Averages - Grid layout */}
+            <View className="flex-col bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+               <Text className="text-sm font-semibold text-gray-600 mb-3">
+                  Average by Meal Type
+               </Text>
+               <View className="flex-row w-full gap-3">
+                  <View className="flex-col flex-[4] gap-3">
+                     <View className="flex-1">
+                        <StatCard
+                           label="Avg Day"
+                           value={
+                              statistics.totalDays > 0
+                                 ? Math.round(
+                                      (statistics.dayTotal /
+                                         statistics.totalDays) *
+                                         10
+                                   ) / 10
+                                 : 0
+                           }
+                           color="#3B82F6"
+                        />
+                     </View>
+                     <View className="flex-1">
+                        <StatCard
+                           label="Avg Night"
+                           value={
+                              statistics.totalDays > 0
+                                 ? Math.round(
+                                      (statistics.nightTotal /
+                                         statistics.totalDays) *
+                                         10
+                                   ) / 10
+                                 : 0
+                           }
+                           color="#8B5CF6"
+                        />
+                     </View>
+                  </View>
+                  <View className="flex flex-[2]">
+                     <View className="flex-1 flex h-full">
+                        <StatCard
+                           className="relative size-full flex justify-center items-center"
+                           label="Avg Extra"
+                           value={
+                              statistics.totalDays > 0
+                                 ? Math.round(
+                                      (statistics.extraTotal /
+                                         statistics.totalDays) *
+                                         10
+                                   ) / 10
+                                 : 0
+                           }
+                           color="#EF4444"
+                        />
+                     </View>
+                  </View>
+               </View>
+            </View>
          </View>
 
-         {/* Performance Info */}
-         <View className="mb-8">
+         {/* Meal Type Distribution */}
+         <View className="mb-12">
             <Text className="text-lg font-semibold text-gray-800 mb-3">
-               Performance
+               Meal Distribution
             </Text>
 
-            <InfoCard
-               title="Optimized Loading"
-               description="Data loads with default values first, then saved data is applied"
-               icon="flash"
-               iconColor="#F59E0B"
-            />
+            {/* Distribution Cards Container with Fixed Heights */}
+            <View className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+               <Text className="text-sm font-semibold text-gray-600 mb-3">
+                  Percentage Distribution
+               </Text>
 
-            <InfoCard
-               title="Efficient Saving"
-               description="Only non-zero values are saved, empty entries are automatically deleted"
-               icon="trending-up"
-               iconColor="#10B981"
-            />
+               <View className="flex-col gap-3">
+                  <View className="flex-1">
+                     <View className="bg-blue-50 rounded-lg p-4 border border-blue-200 shadow-sm">
+                        <View className="flex-row items-center justify-between">
+                           <View>
+                              <Text className="text-sm text-blue-600 font-medium">
+                                 Day Meals
+                              </Text>
+                              <Text className="text-xs text-blue-500">
+                                 Morning & afternoon
+                              </Text>
+                           </View>
+                           <Text className="text-2xl font-bold text-blue-600">
+                              {statistics.totalAmount > 0
+                                 ? Math.round(
+                                      (statistics.dayTotal /
+                                         statistics.totalAmount) *
+                                         100
+                                   )
+                                 : 0}
+                              %
+                           </Text>
+                        </View>
+                     </View>
+                  </View>
+                  <View className="flex-1">
+                     <View className="bg-purple-50 rounded-lg p-4 border border-purple-200 shadow-sm">
+                        <View className="flex-row items-center justify-between">
+                           <View>
+                              <Text className="text-sm text-purple-600 font-medium">
+                                 Night Meals
+                              </Text>
+                              <Text className="text-xs text-purple-500">
+                                 Evening & dinner
+                              </Text>
+                           </View>
+                           <Text className="text-2xl font-bold text-purple-600">
+                              {statistics.totalAmount > 0
+                                 ? Math.round(
+                                      (statistics.nightTotal /
+                                         statistics.totalAmount) *
+                                         100
+                                   )
+                                 : 0}
+                              %
+                           </Text>
+                        </View>
+                     </View>
+                  </View>
+
+                  <View className="flex-1">
+                     <View className="bg-red-50 rounded-lg p-4 border border-red-200 shadow-sm">
+                        <View className="flex-row items-center justify-between">
+                           <View>
+                              <Text className="text-sm text-red-600 font-medium">
+                                 Extra Meals
+                              </Text>
+                              <Text className="text-xs text-red-500">
+                                 Additional meals
+                              </Text>
+                           </View>
+                           <Text className="text-2xl font-bold text-red-600">
+                              {statistics.totalAmount > 0
+                                 ? Math.round(
+                                      (statistics.extraTotal /
+                                         statistics.totalAmount) *
+                                         100
+                                   )
+                                 : 0}
+                              %
+                           </Text>
+                        </View>
+                     </View>
+                  </View>
+               </View>
+            </View>
          </View>
       </ScrollView>
    );

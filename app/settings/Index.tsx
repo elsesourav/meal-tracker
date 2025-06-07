@@ -1,127 +1,171 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import * as Updates from "expo-updates";
-import React from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import CustomAlert from "../../components/CustomAlert";
+import {
+   ALERT_MESSAGES,
+   APP_INFO,
+   CONSOLE_MESSAGES,
+   SETTINGS_SECTIONS,
+} from "../../constants/alertMessages";
 import { useMealTracker } from "../../hooks/useMealTracker";
 import { MealDataService } from "../../services/MealDataService";
 
+interface AlertState {
+   visible: boolean;
+   title: string;
+   message: string;
+   type: "delete" | "info" | "warning";
+   onConfirm?: () => void;
+}
+
 const Settings = () => {
    const { exportData, importData, clearAllData } = useMealTracker();
+
+   const [alert, setAlert] = useState<AlertState>({
+      visible: false,
+      title: "",
+      message: "",
+      type: "info",
+   });
+
+   const showAlert = (
+      title: string,
+      message: string,
+      type: "delete" | "info" | "warning" = "info",
+      onConfirm?: () => void
+   ) => {
+      setAlert({
+         visible: true,
+         title,
+         message,
+         type,
+         onConfirm,
+      });
+   };
+
+   const hideAlert = () => {
+      setAlert((prev) => ({ ...prev, visible: false }));
+   };
 
    const handleExportData = async () => {
       try {
          const success = await exportData();
          if (success) {
-            Alert.alert(
-               "Export Successful",
-               "Your meal tracker data has been exported successfully.",
-               [{ text: "OK" }]
+            showAlert(
+               ALERT_MESSAGES.EXPORT_SUCCESS.title,
+               ALERT_MESSAGES.EXPORT_SUCCESS.message,
+               ALERT_MESSAGES.EXPORT_SUCCESS.type
             );
          }
       } catch (error) {
-         console.error("Export error:", error);
-         Alert.alert(
-            "Export Failed",
-            "There was an error exporting your data. Please try again.",
-            [{ text: "OK" }]
+         console.error(CONSOLE_MESSAGES.EXPORT_ERROR, error);
+         showAlert(
+            ALERT_MESSAGES.EXPORT_FAILED.title,
+            ALERT_MESSAGES.EXPORT_FAILED.message,
+            ALERT_MESSAGES.EXPORT_FAILED.type
          );
       }
    };
 
    const handleImportData = async () => {
-      Alert.alert(
-         "Import Data",
-         "This will replace all your current data. Are you sure you want to continue?",
-         [
-            { text: "Cancel", style: "cancel" },
-            {
-               text: "Import",
-               style: "destructive",
-               onPress: async () => {
-                  try {
-                     const success = await importData();
-                     if (success) {
-                        Alert.alert(
-                           "Import Successful",
-                           "Your data has been imported successfully. The app will reload now.",
-                           [
-                              {
-                                 text: "OK",
-                                 onPress: async () => {
-                                    try {
-                                       console.log(
-                                          "🔄 Reloading app after data import..."
-                                       );
-                                       await Updates.reloadAsync();
-                                    } catch (reloadError) {
-                                       console.error(
-                                          "App reload error:",
-                                          reloadError
-                                       );
-                                    }
-                                 },
-                              },
-                           ]
-                        );
+      showAlert(
+         ALERT_MESSAGES.IMPORT_CONFIRMATION.title,
+         ALERT_MESSAGES.IMPORT_CONFIRMATION.message,
+         ALERT_MESSAGES.IMPORT_CONFIRMATION.type,
+         async () => {
+            try {
+               const success = await importData();
+               if (success) {
+                  showAlert(
+                     ALERT_MESSAGES.IMPORT_SUCCESS.title,
+                     ALERT_MESSAGES.IMPORT_SUCCESS.message,
+                     ALERT_MESSAGES.IMPORT_SUCCESS.type,
+                     async () => {
+                        try {
+                           console.log(CONSOLE_MESSAGES.APP_RELOAD_START);
+                           await Updates.reloadAsync();
+                        } catch (reloadError) {
+                           console.error(
+                              CONSOLE_MESSAGES.APP_RELOAD_ERROR,
+                              reloadError
+                           );
+                        }
                      }
-                  } catch (error) {
-                     console.error("Import error:", error);
-                     Alert.alert(
-                        "Import Failed",
-                        "There was an error importing your data. Please try again.",
-                        [{ text: "OK" }]
-                     );
-                  }
-               },
-            },
-         ]
+                  );
+               }
+            } catch (error) {
+               console.error(CONSOLE_MESSAGES.IMPORT_ERROR, error);
+               showAlert(
+                  ALERT_MESSAGES.IMPORT_FAILED.title,
+                  ALERT_MESSAGES.IMPORT_FAILED.message,
+                  ALERT_MESSAGES.IMPORT_FAILED.type
+               );
+            }
+         }
       );
    };
 
    const handleClearAllData = () => {
-      Alert.alert(
-         "Clear All Data",
-         "This will permanently delete all your meal tracker data. This action cannot be undone.",
-         [
-            { text: "Cancel", style: "cancel" },
-            {
-               text: "Delete All",
-               style: "destructive",
-               onPress: async () => {
-                  try {
-                     console.log(
-                        "🚀 Starting complete data clear from Settings..."
-                     );
-                     if (clearAllData) {
-                        await clearAllData(); // Use the hook function instead of service directly
-                        console.log("✅ Complete data clear successful");
+      showAlert(
+         ALERT_MESSAGES.CLEAR_CONFIRMATION.title,
+         ALERT_MESSAGES.CLEAR_CONFIRMATION.message,
+         ALERT_MESSAGES.CLEAR_CONFIRMATION.type,
+         async () => {
+            try {
+               console.log(CONSOLE_MESSAGES.CLEAR_DATA_START);
+               if (clearAllData) {
+                  await clearAllData();
+                  console.log(CONSOLE_MESSAGES.CLEAR_DATA_SUCCESS);
 
-                        Alert.alert(
-                           "Data Cleared",
-                           "All your data has been deleted successfully.",
-                           [{ text: "OK" }]
-                        );
-                     } else {
-                        // Fallback to service method
-                        await MealDataService.clearAllData();
-                        Alert.alert(
-                           "Data Cleared",
-                           "All your data has been deleted successfully (fallback method).",
-                           [{ text: "OK" }]
-                        );
-                     }
-                  } catch (error) {
-                     console.error("Clear data error:", error);
-                     Alert.alert(
-                        "Error",
-                        "There was an error clearing your data. Please try again.",
-                        [{ text: "OK" }]
-                     );
-                  }
-               },
-            },
-         ]
+                  showAlert(
+                     ALERT_MESSAGES.CLEAR_SUCCESS.title,
+                     ALERT_MESSAGES.CLEAR_SUCCESS.message,
+                     ALERT_MESSAGES.CLEAR_SUCCESS.type
+                  );
+               } else {
+                  // Fallback to service method
+                  await MealDataService.clearAllData();
+                  showAlert(
+                     ALERT_MESSAGES.CLEAR_SUCCESS_FALLBACK.title,
+                     ALERT_MESSAGES.CLEAR_SUCCESS_FALLBACK.message,
+                     ALERT_MESSAGES.CLEAR_SUCCESS_FALLBACK.type
+                  );
+               }
+            } catch (error) {
+               console.error(CONSOLE_MESSAGES.CLEAR_DATA_ERROR, error);
+               showAlert(
+                  ALERT_MESSAGES.CLEAR_FAILED.title,
+                  ALERT_MESSAGES.CLEAR_FAILED.message,
+                  ALERT_MESSAGES.CLEAR_FAILED.type
+               );
+            }
+         }
       );
+   };
+
+   const handleEmailContact = async () => {
+      try {
+         const emailUrl = `mailto:${APP_INFO.CONTACT.EMAIL}`;
+         await Linking.openURL(emailUrl);
+      } catch (error) {
+         console.error("Error opening email:", error);
+      }
+   };
+
+   const handleGitHubContact = async () => {
+      try {
+         const githubUrl = `https://${APP_INFO.CONTACT.GITHUB}`;
+         await Linking.openURL(githubUrl);
+      } catch (error) {
+         console.error("Error opening GitHub:", error);
+      }
+   };
+
+   const handleAboutApp = () => {
+      showAlert(APP_INFO.ABOUT.TITLE, APP_INFO.ABOUT.DESCRIPTION, "info");
    };
 
    const SettingsCard = ({
@@ -163,88 +207,178 @@ const Settings = () => {
    );
 
    return (
-      <ScrollView className="flex-1 bg-gray-50 pt-8 px-6">
-         {/* Header */}
-         <View className="mb-6">
-            <Text className="text-2xl font-bold text-gray-800">Settings</Text>
-            <Text className="text-base text-gray-500 mb-2">
-               Manage your meal tracker preferences and data
-            </Text>
-         </View>
+      <>
+         <ScrollView className="flex-1 bg-gray-50 pt-8 px-6">
+            {/* Header */}
+            <View className="mb-6">
+               <Text className="text-2xl font-bold text-gray-800">
+                  Settings
+               </Text>
+               <Text className="text-base text-gray-500">
+                  {SETTINGS_SECTIONS.DATA_MANAGEMENT.subtitle}
+               </Text>
+            </View>
 
-         {/* Data Management Section */}
-         <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">
-               Data Management
-            </Text>
+            {/* Preferences Section */}
+            <View className="mb-6">
+               <Text className="text-lg font-semibold text-gray-800 mb-3">
+                  Preferences
+               </Text>
 
-            <SettingsCard
-               title="Export Data"
-               subtitle="Save your data as a JSON file"
-               icon="download-outline"
-               onPress={handleExportData}
-               iconColor="#10B981"
-            />
+               <SettingsCard
+                  title="Notifications"
+                  subtitle="Configure meal reminders and alerts"
+                  icon="notifications-outline"
+                  onPress={() => {}}
+                  iconColor="#FF6B35"
+               />
 
-            <SettingsCard
-               title="Import Data"
-               subtitle="Load data from a JSON file"
-               icon="cloud-upload-outline"
-               onPress={handleImportData}
-               iconColor="#3B82F6"
-            />
+               <SettingsCard
+                  title="Theme"
+                  subtitle="Choose your preferred app appearance"
+                  icon="color-palette-outline"
+                  onPress={() => {}}
+                  iconColor="#8B5CF6"
+               />
+            </View>
 
-            <SettingsCard
-               title="Clear All Data"
-               subtitle="Permanently delete all stored data"
-               icon="trash-outline"
-               onPress={handleClearAllData}
-               iconColor="#EF4444"
-            />
-         </View>
+            {/* Contact Section */}
+            <View className="mb-6">
+               <Text className="text-lg font-semibold text-gray-800 mb-3">
+                  {SETTINGS_SECTIONS.CONTACT.title}
+               </Text>
 
-         {/* App Info */}
-         <View className="mb-8">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">
-               App Information
-            </Text>
+               <SettingsCard
+                  title={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.title}
+                  subtitle={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.subtitle}
+                  icon={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.icon}
+                  onPress={handleEmailContact}
+                  iconColor={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.iconColor}
+               />
 
-            <View className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-6">
-               <View className="flex-row items-center mb-2">
-                  <Ionicons name="analytics" size={20} color="#3B82F6" />
-                  <Text className="text-blue-800 font-semibold ml-2">
-                     Data Format
+               <SettingsCard
+                  title={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.title}
+                  subtitle={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.subtitle}
+                  icon={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.icon}
+                  onPress={handleGitHubContact}
+                  iconColor={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.iconColor}
+               />
+            </View>
+
+            {/* Data Management Section */}
+            <View className="mb-6">
+               <Text className="text-lg font-semibold text-gray-800 mb-3">
+                  {SETTINGS_SECTIONS.DATA_MANAGEMENT.title}
+               </Text>
+
+               <SettingsCard
+                  title={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.SHARE_DATA.title
+                  }
+                  subtitle={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.SHARE_DATA.subtitle
+                  }
+                  icon={SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.SHARE_DATA.icon}
+                  onPress={handleExportData}
+                  iconColor={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.SHARE_DATA
+                        .iconColor
+                  }
+               />
+
+               <SettingsCard
+                  title={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.IMPORT_DATA.title
+                  }
+                  subtitle={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.IMPORT_DATA
+                        .subtitle
+                  }
+                  icon={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.IMPORT_DATA.icon
+                  }
+                  onPress={handleImportData}
+                  iconColor={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.IMPORT_DATA
+                        .iconColor
+                  }
+               />
+
+               <SettingsCard
+                  title={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.CLEAR_DATA.title
+                  }
+                  subtitle={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.CLEAR_DATA.subtitle
+                  }
+                  icon={SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.CLEAR_DATA.icon}
+                  onPress={handleClearAllData}
+                  iconColor={
+                     SETTINGS_SECTIONS.DATA_MANAGEMENT.cards.CLEAR_DATA
+                        .iconColor
+                  }
+               />
+            </View>
+
+            {/* App Info */}
+            <View className="mb-6">
+               <Text className="text-lg font-semibold text-gray-800 mb-3">
+                  {SETTINGS_SECTIONS.APP_INFO.title}
+               </Text>
+
+               <SettingsCard
+                  title={SETTINGS_SECTIONS.APP_INFO.cards.VERSION.title}
+                  subtitle={SETTINGS_SECTIONS.APP_INFO.cards.VERSION.subtitle}
+                  icon={SETTINGS_SECTIONS.APP_INFO.cards.VERSION.icon}
+                  onPress={() => {}}
+                  showArrow={false}
+               />
+
+               <SettingsCard
+                  title={SETTINGS_SECTIONS.ABOUT.title}
+                  subtitle={SETTINGS_SECTIONS.ABOUT.subtitle}
+                  icon={SETTINGS_SECTIONS.ABOUT.icon}
+                  onPress={handleAboutApp}
+                  iconColor={SETTINGS_SECTIONS.ABOUT.iconColor}
+               />
+            </View>
+
+            {/* Copyright Section */}
+            <View className="mb-12">
+               <View className="bg-gray-100 rounded-lg p-4 border border-gray-200">
+                  <View className="flex-row items-center justify-center mb-2">
+                     <Image
+                        source={require("../../assets/images/admin-logo.png")}
+                        style={{ width: 16, height: 16 }}
+                        resizeMode="contain"
+                     />
+                     <Text className="text-center text-sm text-gray-600 ml-2">
+                        {APP_INFO.COPYRIGHT}
+                     </Text>
+                  </View>
+                  <Text className="text-center text-xs text-gray-500">
+                     {APP_INFO.BUILT_WITH}
                   </Text>
                </View>
-               <Text className="text-blue-700 text-sm">
-                  Each date entry stores: {"\n"}
-                  {`{ day: amount, night: amount, extra: amount }`}
-                  {"\n"}
-                  Example: {`{ day: 100, night: 50, extra: 25 }`}
-               </Text>
             </View>
+         </ScrollView>
 
-            <SettingsCard
-               title="Version"
-               subtitle="Meal Tracker v1.0.0"
-               icon="information-circle-outline"
-               onPress={() => {}}
-               showArrow={false}
-            />
-         </View>
-
-         {/* Copyright Section */}
-         <View className="mb-8 mt-4">
-            <View className="bg-gray-100 rounded-lg p-4 border border-gray-200">
-               <Text className="text-center text-sm text-gray-600 mb-1">
-                  © 2025 Meal Tracker App
-               </Text>
-               <Text className="text-center text-xs text-gray-500">
-                  Built with React Native & Expo
-               </Text>
-            </View>
-         </View>
-      </ScrollView>
+         <CustomAlert
+            visible={alert.visible}
+            title={alert.title}
+            message={alert.message}
+            type={alert.type}
+            onCancel={hideAlert}
+            onConfirm={
+               alert.onConfirm
+                  ? () => {
+                       hideAlert();
+                       alert.onConfirm!();
+                    }
+                  : undefined
+            }
+         />
+      </>
    );
 };
 

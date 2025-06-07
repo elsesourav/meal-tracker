@@ -8,7 +8,7 @@ interface CustomAlertProps {
    message: string;
    onCancel: () => void;
    onConfirm?: () => void;
-   type?: "delete" | "info";
+   type?: "delete" | "info" | "warning";
 }
 
 const CustomAlert: React.FC<CustomAlertProps> = ({
@@ -17,7 +17,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
    message,
    onCancel,
    onConfirm,
-   type = "delete", // 'delete' or 'info'
+   type = "info", // Default to 'info' instead of 'delete'
 }) => (
    <Modal
       visible={visible}
@@ -29,17 +29,29 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
          <View className="bg-white rounded-2xl p-6 w-full max-w-80 shadow-xl">
             <View
                className={`w-12 h-12 rounded-full ${
-                  type === "delete" ? "bg-red-50" : "bg-blue-50"
+                  type === "delete"
+                     ? "bg-red-50"
+                     : type === "warning"
+                     ? "bg-orange-50"
+                     : "bg-blue-50"
                } justify-center items-center self-center mb-4`}
             >
                <Ionicons
                   name={
                      type === "delete"
                         ? "trash-outline"
+                        : type === "warning"
+                        ? "warning-outline"
                         : "information-circle-outline"
                   }
                   size={24}
-                  color={type === "delete" ? "#DC2626" : "#2563EB"}
+                  color={
+                     type === "delete"
+                        ? "#DC2626"
+                        : type === "warning"
+                        ? "#D97706"
+                        : "#2563EB"
+                  }
                />
             </View>
 
@@ -66,13 +78,19 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
                <TouchableOpacity
                   onPress={onConfirm || onCancel}
                   className={`${onConfirm ? "flex-1" : ""} ${
-                     type === "delete" ? "bg-red-600" : "bg-blue-600"
+                     type === "delete"
+                        ? "bg-red-600"
+                        : type === "warning"
+                        ? "bg-orange-600"
+                        : "bg-blue-600"
                   } py-3 rounded-lg`}
                >
                   <Text className="text-sm font-medium text-white text-center">
                      {onConfirm
                         ? type === "delete"
                            ? "Delete"
+                           : type === "warning"
+                           ? "Proceed"
                            : "Confirm"
                         : "OK"}
                   </Text>

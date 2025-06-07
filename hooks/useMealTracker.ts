@@ -372,15 +372,6 @@ export const useMealTracker = () => {
    const importData = async (): Promise<boolean> => {
       try {
          const success = await MealDataService.importData();
-         if (success) {
-            // Save current state before reloading
-            await saveData();
-            console.log("✅ Data saved before import reload");
-
-            // Reload data after import
-            await loadModifyValues();
-            console.log("✅ Data reloaded after import");
-         }
          return success;
       } catch (error) {
          console.error("Import failed:", error);
