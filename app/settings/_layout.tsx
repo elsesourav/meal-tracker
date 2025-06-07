@@ -36,7 +36,7 @@ const Layout = () => {
    return (
       <>
          <View
-            className="absolute top-0 left-0 h-10 w-screen z-[1000] bg-gray-50 dark:bg-gray-900 shadow-white dark:shadow-[#1F2937]"
+            className="absolute top-0 left-0 h-9 w-screen z-[1000] bg-gray-50 dark:bg-gray-900 shadow-white dark:shadow-[#1F2937]"
             style={{
                shadowOffset: { width: 0, height: 0 },
                shadowOpacity: 1,

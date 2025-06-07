@@ -9,9 +9,11 @@ import {
 } from "react-native";
 import CustomAlert from "../../components/CustomAlert";
 import Toast from "../../components/Toast";
+import { useTheme } from "../../contexts/ThemeContext";
 import { AsyncStorageHelper } from "../../utils/AsyncStorageUtils";
 
 const Modify = () => {
+   const { currentTheme } = useTheme();
    const [values, setValues] = useState<string[]>([]);
    const [newValue, setNewValue] = useState("");
    const [alertVisible, setAlertVisible] = useState(false);
@@ -157,33 +159,36 @@ const Modify = () => {
    };
 
    return (
-      <View className="flex-1 bg-gray-50 pt-10 px-6">
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900 pt-10 px-6">
          {/* Header */}
          <View className="mb-6">
-            <Text className="text-2xl font-bold text-gray-800">
+            <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                Custom Choice
             </Text>
 
-            <Text className="text-base text-gray-500 mb-2">
+            <Text className="text-base text-gray-500 dark:text-gray-400 mb-2">
                Manage your custom selection options
             </Text>
          </View>
 
          {/* Add New Value Section */}
-         <View className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
+         <View className="bg-white dark:bg-gray-800 p-4 rounded-xl mb-6 border border-gray-200 dark:border-gray-700">
             <View className="flex-row justify-between items-center mb-3">
-               <Text className="text-base font-semibold text-gray-700">
+               <Text className="text-base font-semibold text-gray-700 dark:text-gray-200">
                   Add New Choice
                </Text>
-               <Text className="text-sm font-medium text-gray-500">
+               <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   {values.length} choices
                </Text>
             </View>
 
             <View className="flex-row gap-3">
                <TextInput
-                  className="flex-1 border rounded-lg px-3 py-2.5 bg-white border-gray-300 text-gray-950"
+                  className="flex-1 border rounded-lg px-3 py-2.5 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-950 dark:text-gray-100"
                   placeholder="Enter numeric value only..."
+                  placeholderTextColor={
+                     currentTheme === "dark" ? "#9CA3AF" : "#6B7280"
+                  }
                   value={newValue}
                   onChangeText={handleTextChange}
                   onSubmitEditing={addValue}
@@ -192,7 +197,7 @@ const Modify = () => {
 
                <TouchableOpacity
                   onPress={addValue}
-                  className="px-4 py-2.5 rounded-lg justify-center items-center bg-blue-600"
+                  className="px-4 py-2.5 rounded-lg justify-center items-center bg-blue-600 dark:bg-blue-500"
                >
                   <Ionicons name="add" size={20} color="white" />
                </TouchableOpacity>
@@ -200,7 +205,7 @@ const Modify = () => {
          </View>
 
          {/* Current Choices Section */}
-         <Text className="text-lg font-semibold text-gray-700 mb-4">
+         <Text className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
             Current Choice ({values.length})
          </Text>
 
@@ -208,21 +213,25 @@ const Modify = () => {
             {values.map((value, index) => (
                <View
                   key={index}
-                  className="flex-row justify-between items-center bg-white p-4 mb-2 rounded-lg border border-gray-200 shadow-sm"
+                  className="flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 mb-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
                >
                   <View className="flex-row items-center flex-1">
-                     <View className="w-2 h-2 rounded-full bg-blue-600 mr-3" />
+                     <View className="size-3 rounded-full bg-blue-600 dark:bg-blue-500 mr-3" />
 
-                     <Text className="text-base text-gray-700 font-medium">
+                     <Text className="text-base text-xl text-gray-700 dark:text-gray-200 font-medium">
                         {value}
                      </Text>
                   </View>
 
                   <TouchableOpacity
                      onPress={() => deleteValue(index)}
-                     className="bg-red-50 p-2 rounded-md border border-red-200"
+                     className="bg-red-50 dark:bg-red-900/30 p-2 rounded-md border border-red-200 dark:border-red-700"
                   >
-                     <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                     <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={currentTheme === "dark" ? "#F87171" : "#DC2626"}
+                     />
                   </TouchableOpacity>
                </View>
             ))}
@@ -230,8 +239,12 @@ const Modify = () => {
 
          {values.length === 0 && (
             <View className="flex-1 justify-center items-center opacity-50">
-               <Ionicons name="list-outline" size={48} color="#9CA3AF" />
-               <Text className="text-base text-gray-400 mt-2">
+               <Ionicons
+                  name="list-outline"
+                  size={48}
+                  color={currentTheme === "dark" ? "#6B7280" : "#9CA3AF"}
+               />
+               <Text className="text-base text-gray-400 dark:text-gray-500 mt-2">
                   No choices added yet
                </Text>
             </View>

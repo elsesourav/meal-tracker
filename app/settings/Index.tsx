@@ -266,29 +266,6 @@ const Settings = () => {
                />
             </View>
 
-            {/* Contact Section */}
-            <View className="mb-6">
-               <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                  {SETTINGS_SECTIONS.CONTACT.title}
-               </Text>
-
-               <SettingsCard
-                  title={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.title}
-                  subtitle={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.subtitle}
-                  icon={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.icon}
-                  onPress={handleEmailContact}
-                  iconColor={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.iconColor}
-               />
-
-               <SettingsCard
-                  title={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.title}
-                  subtitle={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.subtitle}
-                  icon={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.icon}
-                  onPress={handleGitHubContact}
-                  iconColor={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.iconColor}
-               />
-            </View>
-
             {/* Data Management Section */}
             <View className="mb-6">
                <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
@@ -344,6 +321,29 @@ const Settings = () => {
                />
             </View>
 
+            {/* Contact Section */}
+            <View className="mb-6">
+               <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
+                  {SETTINGS_SECTIONS.CONTACT.title}
+               </Text>
+
+               <SettingsCard
+                  title={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.title}
+                  subtitle={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.subtitle}
+                  icon={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.icon}
+                  onPress={handleEmailContact}
+                  iconColor={SETTINGS_SECTIONS.CONTACT.cards.EMAIL.iconColor}
+               />
+
+               <SettingsCard
+                  title={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.title}
+                  subtitle={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.subtitle}
+                  icon={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.icon}
+                  onPress={handleGitHubContact}
+                  iconColor={SETTINGS_SECTIONS.CONTACT.cards.GITHUB.iconColor}
+               />
+            </View>
+
             {/* App Info */}
             <View className="mb-6">
                <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
@@ -368,7 +368,7 @@ const Settings = () => {
             </View>
 
             {/* Copyright Section */}
-            <View className="mb-12">
+            <View className="mb-14">
                <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <View className="flex-row items-center justify-center mb-2">
                      <Image
