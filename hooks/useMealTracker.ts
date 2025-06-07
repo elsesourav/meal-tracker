@@ -125,38 +125,40 @@ export const useMealTracker = () => {
          let hasActivity = false;
 
          // Check Day column
-         if (
-            daySelected?.value &&
-            daySelected.value !== "--" &&
-            daySelected.value !== "OFF"
-         ) {
-            const value =
-               daySelected.value === "Custom"
-                  ? parseInt(customValues[dayKey] || "0")
-                  : parseInt(daySelected.value || "0");
-            if (!isNaN(value) && value > 0) {
-               dayTotal += value;
+         if (daySelected?.value && daySelected.value !== "--") {
+            if (daySelected.value === "OFF") {
+               // Day is turned OFF - count as activity but don't add to total
                hasActivity = true;
+            } else {
+               const value =
+                  daySelected.value === "Custom"
+                     ? parseInt(customValues[dayKey] || "0")
+                     : parseInt(daySelected.value || "0");
+               if (!isNaN(value) && value > 0) {
+                  dayTotal += value;
+                  hasActivity = true;
+               }
             }
          }
 
          // Check Night column
-         if (
-            nightSelected?.value &&
-            nightSelected.value !== "--" &&
-            nightSelected.value !== "OFF"
-         ) {
-            const value =
-               nightSelected.value === "Custom"
-                  ? parseInt(customValues[nightKey] || "0")
-                  : parseInt(nightSelected.value || "0");
-            if (!isNaN(value) && value > 0) {
-               nightTotal += value;
+         if (nightSelected?.value && nightSelected.value !== "--") {
+            if (nightSelected.value === "OFF") {
+               // Night is turned OFF - count as activity but don't add to total
                hasActivity = true;
+            } else {
+               const value =
+                  nightSelected.value === "Custom"
+                     ? parseInt(customValues[nightKey] || "0")
+                     : parseInt(nightSelected.value || "0");
+               if (!isNaN(value) && value > 0) {
+                  nightTotal += value;
+                  hasActivity = true;
+               }
             }
          }
 
-         // Check Custom/Extra column
+         // Check Custom/Extra column (Extra can't be OFF, only numeric values)
          if (
             customSelected?.value &&
             customSelected.value !== "--" &&
@@ -459,7 +461,14 @@ export const useMealTracker = () => {
 
                if (savedData) {
                   // Process day value
-                  if (savedData.day > 0) {
+                  if (savedData.day === -1) {
+                     // Day is set to "OFF"
+                     newSelectedOptions[dayKey] = {
+                        type: "day",
+                        value: "OFF",
+                        isOn: true,
+                     };
+                  } else if (savedData.day > 0) {
                      const dayValue = savedData.day.toString();
                      if (currentChoices.includes(dayValue)) {
                         newSelectedOptions[dayKey] = {
@@ -478,7 +487,14 @@ export const useMealTracker = () => {
                   }
 
                   // Process night value
-                  if (savedData.night > 0) {
+                  if (savedData.night === -1) {
+                     // Night is set to "OFF"
+                     newSelectedOptions[nightKey] = {
+                        type: "night",
+                        value: "OFF",
+                        isOn: true,
+                     };
+                  } else if (savedData.night > 0) {
                      const nightValue = savedData.night.toString();
                      if (currentChoices.includes(nightValue)) {
                         newSelectedOptions[nightKey] = {

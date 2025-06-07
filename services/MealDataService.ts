@@ -112,10 +112,7 @@ export class MealDataService {
 
             // Process day value
             let dayIsOff = false;
-            if (
-               daySelected?.value &&
-               daySelected.value !== "--"
-            ) {
+            if (daySelected?.value && daySelected.value !== "--") {
                if (daySelected.value === "OFF") {
                   dayIsOff = true;
                   day = -1; // Use -1 to represent "OFF" state
@@ -130,10 +127,7 @@ export class MealDataService {
 
             // Process night value
             let nightIsOff = false;
-            if (
-               nightSelected?.value &&
-               nightSelected.value !== "--"
-            ) {
+            if (nightSelected?.value && nightSelected.value !== "--") {
                if (nightSelected.value === "OFF") {
                   nightIsOff = true;
                   night = -1; // Use -1 to represent "OFF" state
@@ -214,6 +208,7 @@ export class MealDataService {
    static async loadMealData(dateKey: string): Promise<MealData | null> {
       try {
          const { year, month, day } = this.parseDateKey(dateKey);
+         
          const allData = await this.loadAllMealData();
          return allData[year]?.[month]?.[day] || null;
       } catch (error) {
@@ -364,13 +359,30 @@ export class MealDataService {
          Object.values(allData).forEach((yearData) => {
             Object.values(yearData).forEach((monthData) => {
                Object.values(monthData).forEach((data) => {
-                  if (data.day > 0 || data.night > 0 || data.extra > 0) {
+                  // Count as active day if any positive values OR any "OFF" states (-1)
+                  if (
+                     data.day > 0 ||
+                     data.night > 0 ||
+                     data.extra > 0 ||
+                     data.day === -1 ||
+                     data.night === -1
+                  ) {
                      totalDays++;
                   }
-                  dayTotal += data.day;
-                  nightTotal += data.night;
-                  extraTotal += data.extra;
-                  totalAmount += data.day + data.night + data.extra;
+
+                  // Only add positive values to totals (ignore "OFF" states)
+                  if (data.day > 0) {
+                     dayTotal += data.day;
+                     totalAmount += data.day;
+                  }
+                  if (data.night > 0) {
+                     nightTotal += data.night;
+                     totalAmount += data.night;
+                  }
+                  if (data.extra > 0) {
+                     extraTotal += data.extra;
+                     totalAmount += data.extra;
+                  }
                });
             });
          });
@@ -419,13 +431,30 @@ export class MealDataService {
          const yearData = allData[currentYear];
          if (yearData?.[currentMonth]) {
             Object.values(yearData[currentMonth]).forEach((data) => {
-               if (data.day > 0 || data.night > 0 || data.extra > 0) {
+               // Count as active day if any positive values OR any "OFF" states (-1)
+               if (
+                  data.day > 0 ||
+                  data.night > 0 ||
+                  data.extra > 0 ||
+                  data.day === -1 ||
+                  data.night === -1
+               ) {
                   totalDays++;
                }
-               dayTotal += data.day;
-               nightTotal += data.night;
-               extraTotal += data.extra;
-               totalAmount += data.day + data.night + data.extra;
+
+               // Only add positive values to totals (ignore "OFF" states)
+               if (data.day > 0) {
+                  dayTotal += data.day;
+                  totalAmount += data.day;
+               }
+               if (data.night > 0) {
+                  nightTotal += data.night;
+                  totalAmount += data.night;
+               }
+               if (data.extra > 0) {
+                  extraTotal += data.extra;
+                  totalAmount += data.extra;
+               }
             });
          }
 

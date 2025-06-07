@@ -266,28 +266,35 @@ export class NotificationService {
             return;
          }
 
-         // Check if yesterday's data is missing
-         const yesterday = new Date();
-         yesterday.setDate(yesterday.getDate() - 1);
-         const yesterdayKey = yesterday.toISOString().split("T")[0];
+         const today = new Date();
+         const yesterday = new Date(today);
+         yesterday.setDate(today.getDate() - 1);
 
+         const year = yesterday.getFullYear();
+         const month = yesterday.getMonth() + 1;
+         const day = yesterday.getDate();
+
+         const yesterdayKey = `${day}/${month}/${year}`;
          const mealData = await MealDataService.loadMealData(yesterdayKey);
 
          // Don't notify if:
          // 1. No data exists AND neither day nor night are explicitly set to "OFF"
          // 2. Day or night meals are explicitly turned "OFF" (value -1)
          // 3. All fields have positive values (user has logged data)
-         const shouldNotify =
-            !mealData ||
-            (mealData.day === 0 &&
-               mealData.night === 0 &&
-               mealData.extra === 0);
+         const hasData =
+         mealData &&
+         (mealData.day > 0 || mealData.night > 0 || mealData.extra > 0);
 
          // Don't send notification if day or night meals are explicitly set to "OFF"
          const dayIsOff = mealData && mealData.day === -1;
          const nightIsOff = mealData && mealData.night === -1;
 
-         if (shouldNotify && !dayIsOff && !nightIsOff) {
+         console.log("Yesterday's meal data:", mealData);
+         console.log("Has data:", hasData);
+         console.log("Day is OFF:", dayIsOff);
+         console.log("Night is OFF:", nightIsOff);
+
+         if (hasData && !dayIsOff && !nightIsOff) {
             await Notifications.presentNotificationAsync({
                title: "Missing Meal Data",
                body: `You haven't logged your meal data for ${yesterdayKey}. Please update it now.`,
@@ -324,13 +331,20 @@ export class NotificationService {
    // Check if today's data has been filled to cancel today's notifications
    static async checkTodayDataAndCancelIfNeeded() {
       try {
-         const today = new Date().toISOString().split("T")[0];
+
+         const date = new Date();
+         const year = date.getFullYear();
+         const month = date.getMonth() + 1;
+         const day = date.getDate();
+         const today = `${day}/${month}/${year}`;
+
          const mealData = await MealDataService.loadMealData(today);
 
          // Cancel notifications if:
          // 1. Today has any positive data filled (user is active)
          // 2. Day or night meals are explicitly set to "OFF"
-         const hasData = mealData && 
+         const hasData =
+            mealData &&
             (mealData.day > 0 || mealData.night > 0 || mealData.extra > 0);
          const dayIsOff = mealData && mealData.day === -1;
          const nightIsOff = mealData && mealData.night === -1;
