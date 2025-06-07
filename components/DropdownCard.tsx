@@ -37,10 +37,7 @@ const DropdownCard: React.FC<DropdownCardProps> = ({
       "below"
    );
    const buttonRef = useRef<View>(null);
-
-   console.log(dropdownStates);
    
-
    // Refresh values when dropdown is opened (to catch any changes from settings)
    const isDropdownOpen = dropdownStates[typeKey];
    const dropdownHeight = 250;

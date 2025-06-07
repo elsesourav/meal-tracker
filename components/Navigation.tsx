@@ -6,6 +6,7 @@ import CustomDatePicker from "./CustomDatePicker";
 
 interface NavigationProps {
    className?: string;
+   currentDate: Date;
    onDateChange?: (date: Date) => void;
    onSettingsPress?: () => Promise<void>;
    onSaveBeforeDateChange?: () => Promise<void>;
@@ -13,12 +14,12 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({
    className = "",
+   currentDate,
    onDateChange,
    onSettingsPress,
    onSaveBeforeDateChange,
 }) => {
    const router = useRouter();
-   const [currentDate, setCurrentDate] = useState<Date>(new Date());
    const [isDatePickerVisible, setIsDatePickerVisible] =
       useState<boolean>(false);
 
@@ -53,7 +54,6 @@ const Navigation: React.FC<NavigationProps> = ({
          currentDate.getMonth() - 1,
          1
       );
-      setCurrentDate(newDate);
       onDateChange?.(newDate);
    };
 
@@ -73,7 +73,6 @@ const Navigation: React.FC<NavigationProps> = ({
          currentDate.getMonth() + 1,
          1
       );
-      setCurrentDate(newDate);
       onDateChange?.(newDate);
    };
 
@@ -96,7 +95,6 @@ const Navigation: React.FC<NavigationProps> = ({
       }
 
       const newDate = new Date(year, month, 1);
-      setCurrentDate(newDate);
       onDateChange?.(newDate);
    };
 

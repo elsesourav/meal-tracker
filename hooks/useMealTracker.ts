@@ -1,8 +1,9 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import * as Updates from "expo-updates";
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { MealDataService } from "../services/MealDataService";
+import { AsyncStorageHelper } from "../utils/AsyncStorageUtils";
 
 interface MealOption {
    type: string;
@@ -76,12 +77,9 @@ export const useMealTracker = () => {
    // Function to load custom values from AsyncStorage
    const loadModifyValues = useCallback(async () => {
       try {
-         const savedValues = await AsyncStorage.getItem(
-            "@meal_tracker_custom_values"
-         );
+         const savedValues = await AsyncStorageHelper.getCustomValues();
          if (savedValues) {
-            const parsedValues: string[] = JSON.parse(savedValues);
-            const sortedValues = parsedValues.sort(
+            const sortedValues = savedValues.sort(
                (a: string, b: string) => parseInt(a) - parseInt(b)
             );
             setCustomChoices(["--", ...sortedValues, "OFF", "Custom"]);
@@ -381,8 +379,6 @@ export const useMealTracker = () => {
 
             // Reload data after import
             await loadModifyValues();
-            // Reload all data to reflect imported data
-            await reloadAllData();
             console.log("✅ Data reloaded after import");
          }
          return success;
@@ -426,19 +422,18 @@ export const useMealTracker = () => {
             const newCustomValues: { [key: string]: string } = {};
 
             // Get current custom choices
-            const savedChoicesData = await AsyncStorage.getItem(
-               "@meal_tracker_custom_values"
-            );
+            const savedChoicesData = await AsyncStorageHelper.getCustomValues();
+
             const currentChoices = savedChoicesData
                ? [
                     "--",
-                    ...JSON.parse(savedChoicesData).sort(
+                    ...savedChoicesData.sort(
                        (a: string, b: string) => parseInt(a) - parseInt(b)
                     ),
                     "OFF",
                     "Custom",
                  ]
-               : ["--", "50", "100", "OFF", "Custom"];
+               : ["--", "50", "100", "150", "200", "OFF", "Custom"];
 
             // Process all dates
             for (const dateInfo of dates) {
@@ -540,190 +535,20 @@ export const useMealTracker = () => {
       loadDataForMonth();
    }, [currentMonth, generateDates, loadModifyValues]);
 
-   // Simple reload function
-   const reloadAllData = useCallback(async () => {
-      console.log("🔄 Reloading data...");
-      setIsLoading(true);
-
-      try {
-         // Reload custom choices
-         await loadModifyValues();
-
-         // Load all meal data
-         const allMealData = await MealDataService.loadAllMealData();
-         const dates = generateDates();
-         const newSelectedOptions: { [key: string]: MealOption } = {};
-         const newCustomValues: { [key: string]: string } = {};
-
-         // Get current custom choices
-         const savedChoicesData = await AsyncStorage.getItem(
-            "@meal_tracker_custom_values"
-         );
-         const currentChoices = savedChoicesData
-            ? [
-                 "--",
-                 ...JSON.parse(savedChoicesData).sort(
-                    (a: string, b: string) => parseInt(a) - parseInt(b)
-                 ),
-                 "OFF",
-                 "Custom",
-              ]
-            : ["--", "50", "100", "OFF", "Custom"];
-
-         // Process all dates
-         for (const dateInfo of dates) {
-            const dayKey = `${dateInfo.fullDate}-day`;
-            const nightKey = `${dateInfo.fullDate}-night`;
-            const customKey = `${dateInfo.fullDate}-custom`;
-
-            // Set default values
-            newSelectedOptions[dayKey] = {
-               type: "day",
-               value: "--",
-               isOn: true,
-            };
-            newSelectedOptions[nightKey] = {
-               type: "night",
-               value: "--",
-               isOn: true,
-            };
-            newSelectedOptions[customKey] = {
-               type: "custom",
-               value: "OFF",
-               isOn: true,
-            };
-
-            // Load saved data if it exists
-            const [day, month, year] = dateInfo.fullDate.split("/");
-            const savedData = allMealData[year]?.[month]?.[day];
-
-            if (savedData) {
-               // Process values similar to loadDataForMonth
-               if (savedData.day > 0) {
-                  const dayValue = savedData.day.toString();
-                  if (currentChoices.includes(dayValue)) {
-                     newSelectedOptions[dayKey] = {
-                        type: "day",
-                        value: dayValue,
-                        isOn: true,
-                     };
-                  } else {
-                     newSelectedOptions[dayKey] = {
-                        type: "day",
-                        value: "Custom",
-                        isOn: true,
-                     };
-                     newCustomValues[dayKey] = dayValue;
-                  }
-               }
-
-               if (savedData.night > 0) {
-                  const nightValue = savedData.night.toString();
-                  if (currentChoices.includes(nightValue)) {
-                     newSelectedOptions[nightKey] = {
-                        type: "night",
-                        value: nightValue,
-                        isOn: true,
-                     };
-                  } else {
-                     newSelectedOptions[nightKey] = {
-                        type: "night",
-                        value: "Custom",
-                        isOn: true,
-                     };
-                     newCustomValues[nightKey] = nightValue;
-                  }
-               }
-
-               if (savedData.extra > 0) {
-                  const extraValue = savedData.extra.toString();
-                  if (currentChoices.includes(extraValue)) {
-                     newSelectedOptions[customKey] = {
-                        type: "custom",
-                        value: extraValue,
-                        isOn: true,
-                     };
-                  } else {
-                     newSelectedOptions[customKey] = {
-                        type: "custom",
-                        value: "Custom",
-                        isOn: true,
-                     };
-                     newCustomValues[customKey] = extraValue;
-                  }
-               }
-            }
-         }
-
-         setSelectedOptions(newSelectedOptions);
-         setCustomValues(newCustomValues);
-         console.log("✅ Data reloaded");
-      } catch (error) {
-         console.error("Error reloading data:", error);
-      } finally {
-         setIsLoading(false);
-      }
-   }, [generateDates, loadModifyValues]);
-
-   // Simple clear all data function
    const clearAllData = useCallback(async () => {
       try {
          console.log("🗑️ Clearing all data...");
 
-         // Clear stored data from AsyncStorage
          await MealDataService.clearAllData();
          console.log("✅ Storage cleared");
+         await Updates.reloadAsync();
 
-         // Reset UI state to defaults for current month
-         const dates = generateDates();
-         const defaultSelectedOptions: { [key: string]: MealOption } = {};
-         const defaultCustomValues: { [key: string]: string } = {};
-
-         // Set default values for all dates in current month
-         dates.forEach((dateInfo) => {
-            const dayKey = `${dateInfo.fullDate}-day`;
-            const nightKey = `${dateInfo.fullDate}-night`;
-            const customKey = `${dateInfo.fullDate}-custom`;
-
-            defaultSelectedOptions[dayKey] = {
-               type: "day",
-               value: "--",
-               isOn: true,
-            };
-            defaultSelectedOptions[nightKey] = {
-               type: "night",
-               value: "--",
-               isOn: true,
-            };
-            defaultSelectedOptions[customKey] = {
-               type: "custom",
-               value: "OFF",
-               isOn: true,
-            };
-
-            defaultCustomValues[dayKey] = "";
-            defaultCustomValues[nightKey] = "";
-            defaultCustomValues[customKey] = "";
-         });
-
-         console.log("============================\n");
-         console.log(defaultCustomValues);
-         console.log(defaultSelectedOptions);
-         console.log("\n============================");
-         
-         
-
-         setSelectedOptions(defaultSelectedOptions);
-         setCustomValues(defaultCustomValues);
-         setDropdownStates({});
-
-         console.log("✅ All data cleared and UI reset");
          return true;
       } catch (error) {
          console.error("❌ Error clearing data:", error);
          throw error;
       }
-   }, [generateDates]);
+   }, []);
 
    // Save data when app goes to background
    useEffect(() => {
@@ -768,7 +593,6 @@ export const useMealTracker = () => {
       exportData,
       importData,
       saveData,
-      reloadAllData,
       clearAllData,
    };
 };

@@ -1,7 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
+import { AsyncStorageHelper } from "../utils/AsyncStorageUtils";
 
 interface MealData {
    day: number;
@@ -31,9 +32,6 @@ interface ExportData {
    data: SavedMealData | LegacyData;
    customChoices: string[];
 }
-
-const STORAGE_KEY = "@meal_tracker_data";
-const CUSTOM_CHOICES_KEY = "@meal_tracker_custom_values";
 
 export class MealDataService {
    // Helper function to convert date string (1/6/2025) to { year, month, day }
@@ -176,7 +174,7 @@ export class MealDataService {
             }
          }
 
-         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
+         await AsyncStorageHelper.setMealData(existingData);
       } catch (error) {
          console.error("Error saving meal data:", error);
          throw error;
@@ -186,18 +184,16 @@ export class MealDataService {
    // Load all meal data
    static async loadAllMealData(): Promise<SavedMealData> {
       try {
-         const data = await AsyncStorage.getItem(STORAGE_KEY);
+         const data = await AsyncStorageHelper.getMealData();
          if (!data) return {};
 
-         const parsedData = JSON.parse(data);
-
          // Check if the data is in old format (flat) and convert if needed
-         const firstKey = Object.keys(parsedData)[0];
+         const firstKey = Object.keys(data)[0];
          if (firstKey && firstKey.includes("/")) {
-            return this.restructureData(parsedData as LegacyData);
+            return this.restructureData(data as LegacyData);
          }
 
-         return parsedData as SavedMealData;
+         return data as SavedMealData;
       } catch (error) {
          console.error("Error loading meal data:", error);
          return {};
@@ -236,7 +232,7 @@ export class MealDataService {
             }
          });
 
-         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
+         await AsyncStorageHelper.setMealData(existingData);
       } catch (error) {
          console.error("Error deleting meal data:", error);
          throw error;
@@ -246,7 +242,7 @@ export class MealDataService {
    // Clear all meal data (preserves custom choices)
    static async clearAllData(): Promise<void> {
       try {
-         await AsyncStorage.removeItem(STORAGE_KEY);
+         await AsyncStorageHelper.clearAllMealTrackerData();
          console.log("✅ All meal data cleared from storage");
          return;
       } catch (error) {
@@ -259,12 +255,8 @@ export class MealDataService {
    static async exportData(): Promise<string | null> {
       try {
          const mealData = await this.loadAllMealData();
-         const customChoicesData = await AsyncStorage.getItem(
-            CUSTOM_CHOICES_KEY
-         );
-         const customChoices = customChoicesData
-            ? JSON.parse(customChoicesData)
-            : [];
+         const customChoices =
+            (await AsyncStorageHelper.getCustomValues()) || [];
 
          const exportData: ExportData = {
             version: "2.0", // Updated version to indicate new data structure
@@ -329,14 +321,11 @@ export class MealDataService {
          }
 
          // Save imported meal data
-         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+         await AsyncStorageHelper.setMealData(dataToSave);
 
          // Save imported custom choices if available
          if (importData.customChoices) {
-            await AsyncStorage.setItem(
-               CUSTOM_CHOICES_KEY,
-               JSON.stringify(importData.customChoices)
-            );
+            await AsyncStorageHelper.setCustomValues(importData.customChoices);
          }
 
          return true;

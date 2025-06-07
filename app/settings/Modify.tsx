@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
    ScrollView,
@@ -10,8 +9,7 @@ import {
 } from "react-native";
 import CustomAlert from "../../components/CustomAlert";
 import Toast from "../../components/Toast";
-
-const STORAGE_KEY = "@meal_tracker_custom_values";
+import { AsyncStorageHelper } from "../../utils/AsyncStorageUtils";
 
 const Modify = () => {
    const [values, setValues] = useState<string[]>([]);
@@ -31,11 +29,10 @@ const Modify = () => {
    useEffect(() => {
       const loadData = async () => {
          try {
-            const savedValues = await AsyncStorage.getItem(STORAGE_KEY);
+            const savedValues = await AsyncStorageHelper.getCustomValues();
             if (savedValues) {
-               const parsedValues: string[] = JSON.parse(savedValues);
                setValues(
-                  parsedValues.sort(
+                  savedValues.sort(
                      (a: string, b: string) => parseInt(a) - parseInt(b)
                   )
                );
@@ -63,7 +60,7 @@ const Modify = () => {
       const saveData = async () => {
          if (values.length > 0) {
             try {
-               await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+               await AsyncStorageHelper.setCustomValues(values);
             } catch (error) {
                console.error("Error saving values:", error);
                showToast("Error saving data", "error");

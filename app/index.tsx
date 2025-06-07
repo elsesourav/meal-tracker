@@ -42,6 +42,7 @@ export default function Index() {
       <View className="flex-1 bg-base">
          <Navigation
             className="pt-10 h-28"
+            currentDate={currentMonth}
             onDateChange={handleDateChange}
             onSettingsPress={saveData}
             onSaveBeforeDateChange={saveData}

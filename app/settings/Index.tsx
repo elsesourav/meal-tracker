@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Updates from "expo-updates";
 import React from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useMealTracker } from "../../hooks/useMealTracker";
 import { MealDataService } from "../../services/MealDataService";
 
 const Settings = () => {
-   const { exportData, importData, clearAllData, reloadAllData } =
-      useMealTracker();
+   const { exportData, importData, clearAllData } = useMealTracker();
 
    const handleExportData = async () => {
       try {
@@ -41,16 +41,27 @@ const Settings = () => {
                   try {
                      const success = await importData();
                      if (success) {
-                        // Trigger a reload to refresh the month data choices on the main page
-                        if (reloadAllData) {
-                           await reloadAllData();
-                           console.log("✅ Data reloaded after import");
-                        }
-
                         Alert.alert(
                            "Import Successful",
-                           "Your data has been imported successfully.",
-                           [{ text: "OK" }]
+                           "Your data has been imported successfully. The app will reload now.",
+                           [
+                              {
+                                 text: "OK",
+                                 onPress: async () => {
+                                    try {
+                                       console.log(
+                                          "🔄 Reloading app after data import..."
+                                       );
+                                       await Updates.reloadAsync();
+                                    } catch (reloadError) {
+                                       console.error(
+                                          "App reload error:",
+                                          reloadError
+                                       );
+                                    }
+                                 },
+                              },
+                           ]
                         );
                      }
                   } catch (error) {
