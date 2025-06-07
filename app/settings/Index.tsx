@@ -346,7 +346,7 @@ const Settings = () => {
 
             {/* App Info */}
             <View className="mb-6">
-               <Text className="text-lg font-semibold text-gray-800 mb-3">
+               <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
                   {SETTINGS_SECTIONS.APP_INFO.title}
                </Text>
 
@@ -369,18 +369,18 @@ const Settings = () => {
 
             {/* Copyright Section */}
             <View className="mb-12">
-               <View className="bg-gray-100 rounded-lg p-4 border border-gray-200">
+               <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <View className="flex-row items-center justify-center mb-2">
                      <Image
                         source={require("../../assets/images/admin-logo.png")}
                         style={{ width: 16, height: 16 }}
                         resizeMode="contain"
                      />
-                     <Text className="text-center text-sm text-gray-600 ml-2">
+                     <Text className="text-center text-sm text-gray-600 dark:text-gray-400 ml-2">
                         {APP_INFO.COPYRIGHT}
                      </Text>
                   </View>
-                  <Text className="text-center text-xs text-gray-500">
+                  <Text className="text-center text-xs text-gray-500 dark:text-gray-500">
                      {APP_INFO.BUILT_WITH}
                   </Text>
                </View>

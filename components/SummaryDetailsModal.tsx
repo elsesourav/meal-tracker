@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface SummaryDetailsModalProps {
    visible: boolean;
@@ -23,6 +24,8 @@ const SummaryDetailsModal: React.FC<SummaryDetailsModalProps> = ({
    summary,
    datesLength,
 }) => {
+   const { currentTheme } = useTheme();
+
    return (
       <Modal
          visible={visible}
@@ -46,7 +49,11 @@ const SummaryDetailsModal: React.FC<SummaryDetailsModalProps> = ({
                      Summary Details
                   </Text>
                   <TouchableOpacity onPress={onClose}>
-                     <Ionicons name="close" size={24} color="#6B7280" />
+                     <Ionicons
+                        name="close"
+                        size={24}
+                        color={currentTheme === "dark" ? "#9CA3AF" : "#6B7280"}
+                     />
                   </TouchableOpacity>
                </View>
 

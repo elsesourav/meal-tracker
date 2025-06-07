@@ -9,6 +9,7 @@ import {
    TouchableOpacity,
    View,
 } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface NotificationSettingsModalProps {
    visible: boolean;
@@ -31,6 +32,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
    visible,
    onClose,
 }) => {
+   const { currentTheme } = useTheme();
    const [settings, setSettings] = useState<NotificationSettings>({
       enabled: false,
       reminderTimes: {
@@ -95,7 +97,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
       type: "before" | "after";
    }) => (
       <View className="mb-6">
-         <Text className="text-lg font-semibold text-gray-800 mb-3">
+         <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
             {title}
          </Text>
          <View className="flex-row justify-around">
@@ -105,13 +107,15 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
                   onPress={() => onSelect(time)}
                   className={`px-6 py-3 rounded-lg border-2 ${
                      selectedTime === time
-                        ? "bg-blue-500 border-blue-500"
-                        : "bg-white border-gray-300"
+                        ? "bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600"
+                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
                   }`}
                >
                   <Text
                      className={`text-center font-semibold ${
-                        selectedTime === time ? "text-white" : "text-gray-700"
+                        selectedTime === time
+                           ? "text-white"
+                           : "text-gray-700 dark:text-gray-300"
                      }`}
                   >
                      {time}
@@ -129,39 +133,53 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
          presentationStyle="pageSheet"
          onRequestClose={onClose}
       >
-         <View className="flex-1 bg-gray-50">
+         <View className="flex-1 bg-gray-50 dark:bg-gray-900">
             {/* Header */}
-            <View className="bg-white border-b border-gray-200 pt-12 pb-4 px-6">
+            <View className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-12 pb-4 px-6">
                <View className="flex-row items-center justify-between">
-                  <Text className="text-2xl font-bold text-gray-800">
+                  <Text className="text-2xl font-bold text-gray-800 dark:text-white">
                      Notification Settings
                   </Text>
                   <TouchableOpacity
                      onPress={onClose}
-                     className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                     className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center"
                   >
-                     <Ionicons name="close" size={20} color="#6B7280" />
+                     <Ionicons
+                        name="close"
+                        size={20}
+                        color={currentTheme === "dark" ? "#9CA3AF" : "#6B7280"}
+                     />
                   </TouchableOpacity>
                </View>
             </View>
 
             <ScrollView className="flex-1 px-6 py-6">
                {/* Enable/Disable Notifications */}
-               <View className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
+               <View className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
                   <View className="flex-row items-center justify-between">
                      <View className="flex-1">
-                        <Text className="text-lg font-semibold text-gray-800">
+                        <Text className="text-lg font-semibold text-gray-800 dark:text-white">
                            Meal Reminders
                         </Text>
-                        <Text className="text-sm text-gray-500 mt-1">
+                        <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                            Get notified if you miss logging your meals
                         </Text>
                      </View>
                      <Switch
                         value={settings.enabled}
                         onValueChange={toggleNotifications}
-                        trackColor={{ false: "#E5E7EB", true: "#3B82F6" }}
-                        thumbColor={settings.enabled ? "#FFFFFF" : "#9CA3AF"}
+                        trackColor={{
+                           false:
+                              currentTheme === "dark" ? "#374151" : "#E5E7EB",
+                           true: "#3B82F6",
+                        }}
+                        thumbColor={
+                           settings.enabled
+                              ? "#FFFFFF"
+                              : currentTheme === "dark"
+                              ? "#6B7280"
+                              : "#9CA3AF"
+                        }
                      />
                   </View>
                </View>
@@ -169,19 +187,21 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
                {settings.enabled && (
                   <>
                      {/* Explanation */}
-                     <View className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                     <View className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 mb-6 border border-blue-200 dark:border-blue-800">
                         <View className="flex-row items-start">
                            <Ionicons
                               name="information-circle"
                               size={20}
-                              color="#3B82F6"
+                              color={
+                                 currentTheme === "dark" ? "#60A5FA" : "#3B82F6"
+                              }
                               style={{ marginTop: 2 }}
                            />
                            <View className="flex-1 ml-3">
-                              <Text className="text-sm font-medium text-blue-800 mb-2">
+                              <Text className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
                                  How it works:
                               </Text>
-                              <Text className="text-sm text-blue-700 leading-5">
+                              <Text className="text-sm text-blue-700 dark:text-blue-400 leading-5">
                                  • If you haven&apos;t logged any meal data by
                                  midnight (00:00), you&apos;ll get a reminder at
                                  your selected time after midnight
@@ -195,7 +215,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
                      </View>
 
                      {/* Time Selection */}
-                     <View className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
+                     <View className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
                         <TimeSelector
                            title="Reminder Before Midnight"
                            times={settings.reminderTimes.beforeMidnight}

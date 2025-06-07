@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect } from "react";
 import { Animated, Text, View } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 
 type ToastType = "success" | "error" | "info";
 
@@ -25,6 +26,7 @@ const Toast: React.FC<ToastProps> = ({
    duration = 3000,
    onHide,
 }) => {
+   const { currentTheme } = useTheme();
    const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
    const hideToast = useCallback(() => {
@@ -55,36 +57,38 @@ const Toast: React.FC<ToastProps> = ({
       }
    }, [visible, duration, fadeAnim, hideToast]);
 
-   const getToastConfig = (): ToastConfig => {
+   const getToastConfig = (currentTheme: "light" | "dark"): ToastConfig => {
       switch (type) {
          case "success":
             return {
-               bgClass: "bg-emerald-500",
+               bgClass:
+                  currentTheme === "dark" ? "bg-emerald-600" : "bg-emerald-500",
                icon: "checkmark-circle-outline",
                iconColor: "white",
             };
          case "error":
             return {
-               bgClass: "bg-red-500",
+               bgClass: currentTheme === "dark" ? "bg-red-600" : "bg-red-500",
                icon: "close-circle-outline",
                iconColor: "white",
             };
          case "info":
             return {
-               bgClass: "bg-blue-500",
+               bgClass: currentTheme === "dark" ? "bg-blue-600" : "bg-blue-500",
                icon: "information-circle-outline",
                iconColor: "white",
             };
          default:
             return {
-               bgClass: "bg-emerald-500",
+               bgClass:
+                  currentTheme === "dark" ? "bg-emerald-600" : "bg-emerald-500",
                icon: "checkmark-circle-outline",
                iconColor: "white",
             };
       }
    };
 
-   const config = getToastConfig();
+   const config = getToastConfig(currentTheme);
 
    if (!visible) return null;
 
@@ -96,7 +100,11 @@ const Toast: React.FC<ToastProps> = ({
          }}
       >
          <View
-            className={`${config.bgClass} rounded-xl py-3 px-4 flex-row items-center shadow-lg opacity-90`}
+            className={`${
+               config.bgClass
+            } rounded-xl py-3 px-4 flex-row items-center shadow-lg border ${
+               currentTheme === "dark" ? "border-gray-600" : "border-gray-200"
+            }`}
             style={{
                alignSelf: "center",
                minWidth: 120,
