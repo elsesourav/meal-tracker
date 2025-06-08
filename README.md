@@ -18,8 +18,9 @@
 ## 📸 App Preview
 
 <div align="center">
-   <img src="assets/demo/app-demo.gif" alt="Meal Tracker App Demo" width="300" height="533" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-   
+   <video width="200" controls autoplay loop style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <source src="assets/demo/meal-tracker.mov" type="video/mov">
+   </video>
 </div>
 
 ### ✨ Key Highlights
@@ -27,31 +28,32 @@
 <table align="center">
 <tr>
 <td align="center" width="33%">
-   <img src="assets/screenshots/meal-tracking.jpg" alt="Meal Tracking" width="200" height="355" style="border-radius: 10px;">
-   <br><strong>📱 Daily Tracking</strong>
-   <br><small>Intuitive meal logging optimized for mobile</small>
+   <img src="assets/images/theme.gif" alt="Theme Switch" width="200" height="355" style="border-radius: 10px;">
+   <br><strong>🌓 Theme Switch</strong>
+   <br><small>Dynamic light/dark mode toggle</small>
 </td>
 <td align="center" width="33%">
-   <img src="assets/screenshots/status-view.jpg" alt="Status & Analytics" width="200" height="355" style="border-radius: 10px;">
-   <br><strong>📊 Status & Analytics</strong>
-   <br><small>Comprehensive meal insights and calculations</small>
+   <img src="assets/images/custom-input.gif" alt="Custom Input Add" width="200" height="355" style="border-radius: 10px;">
+   <br><strong>➕ Custom Input Add</strong>
+   <br><small>Personalized meal choices management</small>
 </td>
 <td align="center" width="33%">
-   <img src="assets/screenshots/notifications.jpg" alt="Smart Notifications" width="200" height="355" style="border-radius: 10px;">
+   <img src="assets/images/notification.gif" alt="Smart Notifications" width="200" height="355" style="border-radius: 10px;">
    <br><strong>🔔 Smart Alerts</strong>
    <br><small>Intelligent reminder system</small>
 </td>
 </tr>
 </table>
 
-## 🎯 Why Choose Meal Tracker?
+## 🎯 What Makes This Special
 
-### 📱 Mobile-First Excellence
+> This app showcases full-stack mobile development expertise:
 
-> -  **9:16 Aspect Ratio Optimized**: Every pixel designed for portrait smartphone usage
-> -  **One-Handed Operation**: All controls within comfortable thumb reach
-> -  **Touch-Optimized Interface**: Large, responsive touch targets for mobile interaction
-> -  **Portrait-Lock Design**: Consistent experience across all mobile devices
+-  Complex state management with persistent storage
+-  Background processing and notification handling
+-  Data analytics and visualization
+-  Professional deployment and security practices
+-  User-centered design with comprehensive feedback systems
 
 ## 📱 Features
 
