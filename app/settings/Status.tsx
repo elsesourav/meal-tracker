@@ -368,7 +368,7 @@ const Status = () => {
                                  Extra Meals
                               </Text>
                               <Text className="text-xs text-red-500 dark:text-red-400">
-                                 Additional meals
+                                 Snacks & additional
                               </Text>
                            </View>
                            <Text className="text-2xl font-bold text-red-600 dark:text-red-400">
