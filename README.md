@@ -18,9 +18,7 @@
 ## 📸 App Preview
 
 <div align="center">
-   <video width="200" controls autoplay loop style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-      <source src="assets/demo/meal-tracker.mp4" type="video/mp4">
-   </video>
+   <img src="assets/demo/meal-tracker.gif" alt="Meal Tracker App Preview" width="300" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
 </div>
 
 ### ✨ Key Highlights
@@ -28,7 +26,7 @@
 <table align="center">
 <tr>
 <td align="center" width="33%">
-   <img src="assets/images/theme.gif" alt="Theme Switch" width="200" height="355" style="border-radius: 10px;">
+   <img src="assets/images/theme.gif" alt="Theme Switch" width="200" style="border-radius: 10px;">
    <br><strong>🌓 Theme Switch</strong>
    <br><small>Dynamic light/dark mode toggle</small>
 </td>
