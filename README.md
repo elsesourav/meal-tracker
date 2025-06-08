@@ -19,7 +19,7 @@
 
 <div align="center">
    <video width="200" controls autoplay loop style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-      <source src="assets/demo/meal-tracker.mov" type="video/mov">
+      <source src="assets/demo/meal-tracker.mp4" type="video/mp4">
    </video>
 </div>
 
